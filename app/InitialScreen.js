@@ -17,7 +17,7 @@ export default function InitialScreen() {
           style={styles.logo}
           resizeMode="contain"
         />
-        <Text style={styles.welcomeText}>BEM-VINDO AO ECOQUEST</Text>
+        <Text style={styles.Text}>BEM-VINDO AO ECOQUEST</Text>
 
         <TouchableOpacity
           style={styles.button}
@@ -28,7 +28,7 @@ export default function InitialScreen() {
 
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate('cadastro')}
+          onPress={() => navigation.navigate('Cadastro')}
         >
           <Text style={styles.buttonText}>CADASTRO</Text>
         </TouchableOpacity>
@@ -58,12 +58,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logo: {
-    width: 240,
-    height: 140,
+    width: 280,
+    height: 180,
     marginBottom: 30,
   },
-  welcomeText: {
-    fontSize: 22,
+  Text: {
+    fontSize: 26,
     color: '#156499',
     fontWeight: 'bold',
     textAlign: 'center',
@@ -71,8 +71,8 @@ const styles = StyleSheet.create({
   },
   button: {
     backgroundColor: '#019314',
-    paddingVertical: 16,
-    paddingHorizontal: 50,
+    paddingVertical: 11,
+    paddingHorizontal: 45,
     borderRadius: 8,
     marginVertical: 10,
     width: '100%',
@@ -81,6 +81,6 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#FFFFFF',
     fontWeight: 'bold',
-    fontSize: 20,
+    fontSize: 22,
   },
 });

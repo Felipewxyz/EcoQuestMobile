@@ -20,6 +20,8 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack initialRouteName="InitialScreen">
         <Stack.Screen name="InitialScreen" options={{ headerShown: false }} />
+        <Stack.Screen name="Cadastro" options={{ headerShown: false }} />
+        <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />
