@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ImageBackgr
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
 
-export default function LoginScreen() {
+export default function Login() {
   const navigation = useNavigation();
   const [senhaVisivel, setSenhaVisivel] = useState(false);
   const [senha, setSenha] = useState('');
@@ -62,7 +62,9 @@ export default function LoginScreen() {
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.botaoEntrar}>
+            <TouchableOpacity 
+            style={styles.botaoEntrar}
+            onPress={() => navigation.navigate('Home')}>
               <Text style={styles.textoBotao}>ENTRAR</Text>
             </TouchableOpacity>
           </View>

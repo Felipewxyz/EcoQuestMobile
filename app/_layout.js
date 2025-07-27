@@ -21,7 +21,9 @@ export default function RootLayout() {
       <Stack initialRouteName="InitialScreen">
         <Stack.Screen name="InitialScreen" options={{ headerShown: false }} />
         <Stack.Screen name="Cadastro" options={{ headerShown: false }} />
-        <Stack.Screen name="login" options={{ headerShown: false }} />
+        <Stack.Screen name="Login" options={{ headerShown: false }} />
+        <Stack.Screen name="Sobre" options={{ headerShown: false }} />
+        <Stack.Screen name="Home" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />

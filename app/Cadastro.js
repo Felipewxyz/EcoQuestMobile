@@ -78,7 +78,9 @@ export default function Cadastro() {
               </TouchableOpacity>
             </View>
 
-            <TouchableOpacity style={styles.ButtonCadastro}>
+            <TouchableOpacity 
+            style={styles.ButtonCadastro}
+            onPress={() => navigation.navigate('Home')}>
               <Text style={styles.ButtonText}>CONCLUIR CADASTRO</Text>
             </TouchableOpacity>
           </View>

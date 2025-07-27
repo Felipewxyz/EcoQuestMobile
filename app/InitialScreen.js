@@ -21,7 +21,7 @@ export default function InitialScreen() {
 
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate('sobre')}
+          onPress={() => navigation.navigate('Sobre')}
         >
           <Text style={styles.buttonText}>SOBRE</Text>
         </TouchableOpacity>
@@ -35,7 +35,7 @@ export default function InitialScreen() {
 
         <TouchableOpacity
           style={styles.button}
-          onPress={() => navigation.navigate('login')}
+          onPress={() => navigation.navigate('Login')}
         >
           <Text style={styles.buttonText}>LOGIN</Text>
         </TouchableOpacity>
