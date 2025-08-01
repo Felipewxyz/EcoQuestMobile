@@ -1,7 +1,6 @@
 import { useNavigation, useRoute } from "@react-navigation/native";
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import Footer from "../../components/Footer";
 
 export default function Home() {
   const navigation = useNavigation();
@@ -12,7 +11,6 @@ export default function Home() {
       <View style={styles.centerContent}>
         <Text style={styles.title}>Home</Text>
       </View>
-      <Footer />
     </View>
   );
 }

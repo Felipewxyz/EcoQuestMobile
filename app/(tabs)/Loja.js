@@ -1,7 +1,22 @@
+import { StyleSheet, Text, View } from "react-native";
+
 export default function Loja() {
   return (
-    <View>
-      <Text>Página Loja</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Página Loja</Text>
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    justifyContent: "space-between",
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#000000",
+  }
+});

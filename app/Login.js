@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, ImageBackground, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from 'expo-router';
+import { useRouter } from 'expo-router';
 
 export default function Login() {
-  const navigation = useNavigation();
+  const router = useRouter();
   const [senhaVisivel, setSenhaVisivel] = useState(false);
   const [senha, setSenha] = useState('');
 
@@ -14,7 +14,7 @@ export default function Login() {
       style={styles.background}
       resizeMode="cover"
     >
-      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+      <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <View style={styles.circle}>
           <Ionicons name="chevron-back" size={22} color="#fff" />
         </View>
@@ -64,7 +64,7 @@ export default function Login() {
 
             <TouchableOpacity 
             style={styles.botaoEntrar}
-            onPress={() => navigation.navigate('Home')}>
+            onPress={() => router.push('/Home')}>
               <Text style={styles.textoBotao}>ENTRAR</Text>
             </TouchableOpacity>
           </View>
