@@ -29,6 +29,7 @@ export default function TabsLayout() {
 
       <Tabs.Screen name="Conquistas" options={{ href: null }} />
       <Tabs.Screen name="Configuracoes" options={{ href: null }} />
+      <Tabs.Screen name="Pratica" options={{ href: null }} />
     </Tabs>
   );
 }

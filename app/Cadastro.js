@@ -80,7 +80,7 @@ export default function Cadastro() {
 
             <TouchableOpacity 
             style={styles.ButtonCadastro}
-            onPress={() => navigation.navigate('Home')}>
+            onPress={() => navigation.navigate('Login')}>
               <Text style={styles.ButtonText}>CONCLUIR CADASTRO</Text>
             </TouchableOpacity>
           </View>
