@@ -13,7 +13,7 @@ export default function Home() {
 
   return (
     <View style={styles.container}>
-      {/* "rodateto" */}
+      {/* Cabeçalho de ícones */}
       <View style={styles.topIcons}>
         <View style={styles.iconItem}>
           <Image source={require("../../assets/images/gota.png")} style={styles.icon} />
@@ -29,17 +29,35 @@ export default function Home() {
         </View>
       </View>
 
-      {/* caixa do tema que leva pra pag de pratica */}
+      {/* Prática Comum */}
       <View style={styles.themeBox}>
         <View style={styles.themeTextContainer}>
           <Text style={styles.themeTitle}>TEMA 01</Text>
           <Text style={styles.themeSubtitle}>Práticas Comuns</Text>
         </View>
         <View style={styles.divider} />
-        <Pressable onPress={() => navigation.navigate("Pratica")}>
+        <Pressable onPress={() => navigation.navigate("Temas")}>
           <Ionicons name="journal-outline" size={40} color="#019314" />
         </Pressable>
       </View>
+      <Pressable style={styles.button} onPress={() => navigation.navigate("PraticaComum")}>
+        <Text style={styles.buttonText}>Acessar Prática Comum</Text>
+      </Pressable>
+
+      {/* Prática Extra */}
+      <View style={[styles.themeBox, { marginTop: 30 }]}>
+        <View style={styles.themeTextContainer}>
+          <Text style={styles.themeTitle}>TEMA 01</Text>
+          <Text style={styles.themeSubtitle}>Práticas Extras</Text>
+        </View>
+        <View style={styles.divider} />
+        <Pressable onPress={() => navigation.navigate("Temas")}>
+          <Ionicons name="journal-outline" size={40} color="#019314" />
+        </Pressable>
+      </View>
+      <Pressable style={styles.button} onPress={() => navigation.navigate("PraticaExtra")}>
+        <Text style={styles.buttonText}>Acessar Prática Extra</Text>
+      </Pressable>
     </View>
   );
 }
@@ -101,5 +119,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#019314",
     marginHorizontal: 12,
     opacity: 0.8,
+  },
+  button: {
+    marginTop: 10,
+    backgroundColor: "#019314",
+    paddingVertical: 10,
+    borderRadius: 6,
+    alignItems: "center",
+  },
+  buttonText: {
+    color: "#FFFFFF",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });
