@@ -1,7 +1,6 @@
-import React from "react";
-import { StyleSheet, Text, View, Image, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 export default function Home() {
   const navigation = useNavigation();
@@ -32,7 +31,7 @@ export default function Home() {
       {/* Prática Comum */}
       <View style={styles.themeBox}>
         <View style={styles.themeTextContainer}>
-          <Text style={styles.themeTitle}>TEMA 01</Text>
+          <Text style={styles.themeTitle}>TEMA 019</Text>
           <Text style={styles.themeSubtitle}>Práticas Comuns</Text>
         </View>
         <View style={styles.divider} />
