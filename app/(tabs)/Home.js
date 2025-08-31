@@ -31,7 +31,7 @@ export default function Home() {
       {/* Prática Comum */}
       <View style={styles.themeBox}>
         <View style={styles.themeTextContainer}>
-          <Text style={styles.themeTitle}>TEMA 019</Text>
+          <Text style={styles.themeTitle}>TEMA 01</Text>
           <Text style={styles.themeSubtitle}>Práticas Comuns</Text>
         </View>
         <View style={styles.divider} />
