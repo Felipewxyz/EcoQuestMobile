@@ -1,18 +1,18 @@
-import React, { useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import * as ImagePicker from "expo-image-picker";
+import { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
+  Alert,
   Image,
   Modal,
   Pressable,
-  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import * as ImagePicker from "expo-image-picker";
-import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
 
 export default function PraticaComum() {
   const navigation = useNavigation();
@@ -37,11 +37,11 @@ export default function PraticaComum() {
       }
 
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: "Images", // atualizado para evitar warning
         allowsEditing: true,
         aspect: [1, 1],
         quality: 1,
       });
+
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const novaImagem = result.assets[0].uri;
