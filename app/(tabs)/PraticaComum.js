@@ -1,6 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useState } from "react";
 import {
   Alert,
@@ -20,43 +21,49 @@ export default function PraticaComum() {
   const [imagemSelecionada, setImagemSelecionada] = useState(null);
   const [opcoesVisiveis, setOpcoesVisiveis] = useState(null);
 
-  // Cada tópico tem 3 espaços de imagem
   const [imagensUsuario, setImagensUsuario] = useState({
     limpeza: [null, null, null],
     secagem: [null, null, null],
     separacao: [null, null, null],
   });
 
-  // abrir galeria e escolher imagem
+  // calcula e salva progresso (0..1)
+  const atualizarProgresso = async (novoEstado) => {
+    try {
+      const topicos = Object.keys(novoEstado);
+      const total = topicos.length;
+      const comImagem = topicos.filter((t) =>
+        novoEstado[t].some((img) => img !== null)
+      ).length;
+      const progresso = comImagem / total;
+      await AsyncStorage.setItem("progresso_pratica_comum", progresso.toString());
+    } catch (e) {
+      console.log("Erro ao salvar progresso:", e);
+    }
+  };
+
+  // escolher imagem
   const escolherImagem = async (topico, index) => {
     try {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert("Permissão necessária", "Autorize o acesso à galeria para adicionar imagens.");
+        Alert.alert("Permissão necessária", "Autorize o acesso à galeria.");
         return;
       }
-
       const result = await ImagePicker.launchImageLibraryAsync({
         allowsEditing: true,
         aspect: [1, 1],
         quality: 1,
       });
 
-
-      if (!result.canceled && result.assets && result.assets.length > 0) {
+      if (!result.canceled && result.assets?.length > 0) {
         const novaImagem = result.assets[0].uri;
-
         setImagensUsuario((prev) => {
           const novoEstado = {
             ...prev,
             [topico]: prev[topico].map((img, i) => (i === index ? novaImagem : img)),
           };
-
-          const todasPreenchidas = Object.values(novoEstado)
-            .flat()
-            .every((img) => img !== null);
-          if (todasPreenchidas) setConcluida(true);
-
+          atualizarProgresso(novoEstado);
           return novoEstado;
         });
       }
@@ -73,21 +80,19 @@ export default function PraticaComum() {
         ...prev,
         [topico]: prev[topico].map((img, i) => (i === index ? null : img)),
       };
-      setConcluida(false); // desmarca concluída se excluir algo
+      atualizarProgresso(novoEstado);
       return novoEstado;
     });
     setOpcoesVisiveis(null);
   };
 
-  // abrir modal estilizado
-  const abrirOpcoesImagem = (img, topico, index) => {
-    setOpcoesVisiveis({ img, topico, index });
-  };
+  // abrir modal de opções (ver / trocar / excluir)
+  const abrirOpcoesImagem = (img, topico, index) => setOpcoesVisiveis({ img, topico, index });
 
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
-        {/* ===== LINHA SUPERIOR COM SETA + CAIXA 1 ===== */}
+        {/* ===== CAIXA 1 ===== */}
         <View style={styles.topoLinha}>
           <TouchableOpacity style={styles.botaoVoltar} onPress={() => navigation.navigate("Home")}>
             <Ionicons name="arrow-back" size={26} color="black" />
@@ -98,11 +103,7 @@ export default function PraticaComum() {
               <Text style={styles.textoSuperior}>Prática 1</Text>
               <Text style={styles.textoInferior}>Tema 01</Text>
             </View>
-
-            {/* Barra lateral sempre verde */}
             <View style={[styles.barraVertical, { backgroundColor: "#4CAF50" }]} />
-
-            {/* Botão que muda de preto → verde */}
             <TouchableOpacity onPress={() => setConcluida(!concluida)}>
               <Ionicons
                 name={concluida ? "checkbox" : "checkbox-outline"}
@@ -119,7 +120,7 @@ export default function PraticaComum() {
             APRENDA COMO SEPARAR O SEU LIXO DE PLÁSTICO
           </Text>
 
-          {/* ===== INSTRUÇÕES ===== */}
+          {/* ===== CAIXA 2 (instruções) ===== */}
           <View style={styles.caixaBranca}>
             <Text style={styles.textoBrancoCaixa2}>
               <Text style={styles.negrito}>1 - Limpeza{"\n"}</Text>
@@ -127,13 +128,13 @@ export default function PraticaComum() {
               <Text style={styles.negrito}>2 - Secagem{"\n"}</Text>
               Seque bem antes de descartar para evitar contaminação.{"\n\n"}
               <Text style={styles.negrito}>3 - Separação{"\n"}</Text>
-              Separe os plásticos dos demais resíduos e utilize a lixeira vermelha, destinada a materiais plásticos.
+              Separe os plásticos dos demais resíduos e utilize a lixeira vermelha.
             </Text>
           </View>
 
           <Text style={styles.tituloProgresso}>SEU PROGRESSO</Text>
 
-          {/* ===== CAIXA DE IMAGENS ===== */}
+          {/* ===== CAIXA 3 ===== */}
           <View style={styles.caixaBranca}>
             {[
               { key: "limpeza", titulo: "1 - Limpeza" },
@@ -145,11 +146,7 @@ export default function PraticaComum() {
                   <Text style={styles.negrito}>{topico.titulo}</Text>
                 </Text>
 
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={styles.scrollHorizontal}
-                >
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollHorizontal}>
                   {imagensUsuario[topico.key].map((img, index) => (
                     <TouchableOpacity
                       key={`${topico.key}-${index}`}
@@ -175,13 +172,8 @@ export default function PraticaComum() {
         </View>
       </ScrollView>
 
-      {/* ===== MODAL DE OPÇÕES ESTILIZADO ===== */}
-      <Modal
-        visible={!!opcoesVisiveis}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setOpcoesVisiveis(null)}
-      >
+      {/* modal de opções (ver / trocar / excluir) */}
+      <Modal visible={!!opcoesVisiveis} transparent animationType="fade" onRequestClose={() => setOpcoesVisiveis(null)}>
         <View style={styles.modalFundo}>
           <View style={styles.modalCaixaOpcoes}>
             <Text style={styles.modalTitulo}>Escolha uma opção</Text>
@@ -189,8 +181,10 @@ export default function PraticaComum() {
             <TouchableOpacity
               style={styles.botaoModal}
               onPress={() => {
-                setImagemSelecionada(opcoesVisiveis.img);
-                setOpcoesVisiveis(null);
+                if (opcoesVisiveis) {
+                  setImagemSelecionada(opcoesVisiveis.img);
+                  setOpcoesVisiveis(null);
+                }
               }}
             >
               <Ionicons name="eye" size={22} color="#4CAF50" />
@@ -200,44 +194,37 @@ export default function PraticaComum() {
             <TouchableOpacity
               style={styles.botaoModal}
               onPress={() => {
-                escolherImagem(opcoesVisiveis.topico, opcoesVisiveis.index);
-                setOpcoesVisiveis(null);
+                if (opcoesVisiveis) {
+                  escolherImagem(opcoesVisiveis.topico, opcoesVisiveis.index);
+                  setOpcoesVisiveis(null);
+                }
               }}
             >
               <Ionicons name="refresh" size={22} color="#4CAF50" />
               <Text style={styles.textoBotaoModal}>Trocar imagem</Text>
             </TouchableOpacity>
 
-            {/* NOVO: Excluir imagem */}
             <TouchableOpacity
               style={[styles.botaoModal, { backgroundColor: "#FCE4EC" }]}
-              onPress={() =>
-                excluirImagem(opcoesVisiveis.topico, opcoesVisiveis.index)
-              }
+              onPress={() => {
+                if (opcoesVisiveis) {
+                  excluirImagem(opcoesVisiveis.topico, opcoesVisiveis.index);
+                }
+              }}
             >
               <Ionicons name="trash" size={22} color="#E53935" />
-              <Text style={[styles.textoBotaoModal, { color: "#E53935" }]}>
-                Excluir imagem
-              </Text>
+              <Text style={[styles.textoBotaoModal, { color: "#E53935" }]}>Excluir imagem</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.botaoCancelar}
-              onPress={() => setOpcoesVisiveis(null)}
-            >
+            <TouchableOpacity style={styles.botaoCancelar} onPress={() => setOpcoesVisiveis(null)}>
               <Text style={styles.textoCancelar}>Cancelar</Text>
             </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* ===== MODAL DE IMAGEM AMPLIADA ===== */}
-      <Modal
-        visible={!!imagemSelecionada}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setImagemSelecionada(null)}
-      >
+      {/* modal para visualizar imagem ampliada */}
+      <Modal visible={!!imagemSelecionada} transparent animationType="fade" onRequestClose={() => setImagemSelecionada(null)}>
         <View style={styles.modalFundo}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setImagemSelecionada(null)} />
           <View style={styles.modalConteudo}>
@@ -255,9 +242,8 @@ export default function PraticaComum() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#FFFFFF" },
   scrollContainer: { padding: 15, paddingBottom: 30, paddingTop: 30 },
-  topoLinha: { flexDirection: "row", alignItems: "center", marginBottom: 25, marginTop: 15 },
+  topoLinha: { flexDirection: "row", alignItems: "center", marginBottom: 25 },
   botaoVoltar: { marginRight: 10, padding: 10 },
-
   caixa1: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -274,7 +260,6 @@ const styles = StyleSheet.create({
   textoSuperior: { fontSize: 20, fontWeight: "bold", color: "#4CAF50" },
   textoInferior: { fontSize: 17, color: "#333" },
   barraVertical: { width: 5, height: 65, borderRadius: 3, marginHorizontal: 10 },
-
   caixaVerde: { backgroundColor: "#4CAF50", borderRadius: 12, padding: 20 },
   tituloVerde: {
     color: "#FFF",
@@ -300,7 +285,6 @@ const styles = StyleSheet.create({
   },
   topico: { fontSize: 16, color: "#333", marginBottom: 8 },
   scrollHorizontal: { marginBottom: 15 },
-
   quadradoCinza: {
     width: 120,
     height: 120,
@@ -317,24 +301,13 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
 
-  // ===== MODAIS =====
+  // MODAIS
   modalFundo: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.85)",
     justifyContent: "center",
     alignItems: "center",
   },
-  modalConteudo: { justifyContent: "center", alignItems: "center" },
-  imagemAmpliada: {
-    width: 340,
-    height: 340,
-    borderRadius: 12,
-    backgroundColor: "#DDD",
-    resizeMode: "contain",
-  },
-  botaoFechar: { position: "absolute", top: 10, right: 10, padding: 10 },
-
-  // ===== MODAL PERSONALIZADO =====
   modalCaixaOpcoes: {
     backgroundColor: "#FFF",
     width: 280,
@@ -342,12 +315,7 @@ const styles = StyleSheet.create({
     padding: 20,
     alignItems: "center",
   },
-  modalTitulo: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#333",
-    marginBottom: 15,
-  },
+  modalTitulo: { fontSize: 18, fontWeight: "bold", color: "#333", marginBottom: 15 },
   botaoModal: {
     flexDirection: "row",
     alignItems: "center",
@@ -358,12 +326,18 @@ const styles = StyleSheet.create({
     width: "100%",
     marginBottom: 10,
   },
-  textoBotaoModal: {
-    fontSize: 16,
-    color: "#333",
-    marginLeft: 10,
-    fontWeight: "500",
-  },
+  textoBotaoModal: { fontSize: 16, color: "#333", marginLeft: 10, fontWeight: "500" },
   botaoCancelar: { marginTop: 5 },
   textoCancelar: { color: "#888", fontSize: 15 },
+
+  // modal imagem
+  modalConteudo: { justifyContent: "center", alignItems: "center" },
+  imagemAmpliada: {
+    width: 340,
+    height: 340,
+    borderRadius: 12,
+    backgroundColor: "#DDD",
+    resizeMode: "contain",
+  },
+  botaoFechar: { position: "absolute", top: 10, right: 10, padding: 10 },
 });

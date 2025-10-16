@@ -1,29 +1,47 @@
 import React, { useRef, useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
-import { Image, Pressable, StyleSheet, Text, View, Animated, ScrollView } from "react-native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import {
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  Animated,
+  ScrollView,
+} from "react-native";
 import Svg, { Circle } from "react-native-svg";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Home() {
   const navigation = useNavigation();
+  const anim = useRef(new Animated.Value(0)).current;
+  const [progressoComum, setProgressoComum] = useState(0);
 
-  const [progressos, setProgressos] = useState([0.2, 0.5, 0.8, 1]);
-  const anims = progressos.map(() => useRef(new Animated.Value(0)).current);
-
-  useEffect(() => {
-    progressos.forEach((valor, i) => {
-      Animated.timing(anims[i], {
-        toValue: valor,
-        duration: 800,
+  const carregarProgresso = async () => {
+    try {
+      const valor = await AsyncStorage.getItem("progresso_pratica_comum");
+      const p = valor ? parseFloat(valor) : 0;
+      setProgressoComum(p);
+      Animated.timing(anim, {
+        toValue: p,
+        duration: 900,
         useNativeDriver: false,
       }).start();
-    });
-  }, [progressos]);
+    } catch (e) {
+      console.log("Erro ao carregar progresso:", e);
+    }
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      carregarProgresso();
+    }, [])
+  );
 
   const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-  const CircleProgress = ({ progress, onPress }) => {
-    const size = 90;
+  const CircleProgress = ({ progress, onPress, size = 90, strokeColor = "#019314" }) => {
     const strokeWidth = 6;
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
@@ -33,7 +51,7 @@ export default function Home() {
     });
 
     return (
-      <View style={styles.circleContainer}>
+      <View style={[styles.circleContainer, { width: size, height: size }]}>
         <Svg width={size} height={size}>
           <Circle
             stroke="#C8C8C8"
@@ -44,7 +62,7 @@ export default function Home() {
             strokeWidth={strokeWidth}
           />
           <AnimatedCircle
-            stroke="#019314"
+            stroke={strokeColor}
             fill="none"
             cx={size / 2}
             cy={size / 2}
@@ -53,21 +71,18 @@ export default function Home() {
             strokeDasharray={circumference}
             strokeDashoffset={animatedStroke}
             strokeLinecap="round"
+            transform={`rotate(90 ${size / 2} ${size / 2})`}
           />
         </Svg>
-        <Pressable
-          style={styles.iconInside}
-          onPress={onPress}
-        >
-          <Ionicons name="home-outline" size={40} color="#019314" />
+        <Pressable style={styles.iconInside} onPress={onPress}>
+          <Ionicons name="leaf-outline" size={38} color={strokeColor} />
         </Pressable>
       </View>
     );
   };
 
-  const BlocoTema = ({ title, progressOnPress, isFirst }) => (
+  const BlocoTema = ({ title, onPress, isExtras }) => (
     <>
-      {/* Bloco Prática Comum / Extra */}
       <View style={styles.themeBox}>
         <View style={styles.themeTextContainer}>
           <Text style={styles.themeTitle}>TEMA 01</Text>
@@ -79,21 +94,23 @@ export default function Home() {
         </Pressable>
       </View>
 
-      {/* Quadrado verde com quatro círculos */}
-      <View style={[styles.greenBox, !isFirst && styles.extraSpacing]}>
-        <View style={styles.progressGrid}>
-          <CircleProgress progress={anims[0]} onPress={progressOnPress} />
-          <CircleProgress progress={anims[1]} onPress={progressOnPress} />
-          <CircleProgress progress={anims[2]} onPress={progressOnPress} />
-          <CircleProgress progress={anims[3]} onPress={progressOnPress} />
-        </View>
+      {/* ===== Quadrado Verde com Ícones (um por linha) ===== */}
+      <View style={styles.greenBox}>
+        {[0, 1, 2, 3].map((i) => (
+          <View key={i} style={styles.circleRow}>
+            <CircleProgress
+              progress={isExtras ? new Animated.Value(1) : anim}
+              onPress={onPress}
+            />
+          </View>
+        ))}
       </View>
     </>
   );
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 40 }}>
-      {/* Cabeçalho de ícones */}
+    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
+      {/* Roda-teto */}
       <View style={styles.topIcons}>
         <View style={styles.iconItem}>
           <Image source={require("../../assets/images/gota.png")} style={styles.icon} />
@@ -109,18 +126,18 @@ export default function Home() {
         </View>
       </View>
 
-      {/* Primeiro bloco: Comuns */}
+      {/* Caixa 1 (Práticas Comuns) */}
       <BlocoTema
         title="Práticas Comuns"
-        progressOnPress={() => navigation.navigate("PraticaComum")}
-        isFirst={true}
+        onPress={() => navigation.navigate("PraticaComum")}
+        isExtras={false}
       />
 
-      {/* Segundo bloco: Extras */}
+      {/* Caixa 2 (Práticas Extras) */}
       <BlocoTema
         title="Práticas Extras"
-        progressOnPress={() => navigation.navigate("PraticaExtra")}
-        isFirst={false}
+        onPress={() => navigation.navigate("PraticaExtra")}
+        isExtras={true}
       />
     </ScrollView>
   );
@@ -142,16 +159,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
   },
-  icon: {
-    width: 50,
-    height: 50,
-    marginRight: 6,
-  },
-  iconText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#000000",
-  },
+  icon: { width: 50, height: 50, marginRight: 6 },
+  iconText: { fontSize: 18, fontWeight: "bold", color: "#000" },
   themeBox: {
     backgroundColor: "#FFFFFF",
     borderColor: "#019314",
@@ -162,22 +171,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     height: 80,
-    marginTop: 10, // diminuiu espaço acima do primeiro quadrado
+    marginTop: 10,
   },
-  themeTextContainer: {
-    flex: 1,
-  },
-  themeTitle: {
-    color: "#019314",
-    fontSize: 20,
-    fontWeight: "bold",
-    opacity: 0.6,
-  },
-  themeSubtitle: {
-    color: "#019314",
-    fontSize: 16,
-    fontWeight: "500",
-  },
+  themeTextContainer: { flex: 1 },
+  themeTitle: { color: "#019314", fontSize: 20, fontWeight: "bold", opacity: 0.6 },
+  themeSubtitle: { color: "#019314", fontSize: 16, fontWeight: "500" },
   divider: {
     width: 2,
     height: "80%",
@@ -189,31 +187,25 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: "#019314",
     borderRadius: 15,
-    padding: 20,
+    paddingVertical: 25,
+    paddingHorizontal: 10,
+    marginTop: 10,
+    marginBottom: 30,
+    alignItems: "center",
+  },
+  circleRow: {
+    marginVertical: 10, // mantém o mesmo espaçamento vertical entre eles
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 10,
-  },
-  extraSpacing: {
-    marginBottom: 30,
-  },
-  progressGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
-    width: "100%",
   },
   circleContainer: {
     alignItems: "center",
     justifyContent: "center",
-    margin: 10,
   },
   iconInside: {
     position: "absolute",
-    alignItems: "center",
-    justifyContent: "center",
     top: "50%",
     left: "50%",
-    transform: [{ translateX: -20 }, { translateY: -20 }],
+    transform: [{ translateX: -19 }, { translateY: -19 }],
   },
 });
