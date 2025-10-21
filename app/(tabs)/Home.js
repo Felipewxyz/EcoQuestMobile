@@ -1,30 +1,44 @@
-import React, { useRef, useEffect, useState } from "react";
 import { Ionicons } from "@expo/vector-icons";
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import React, { useRef, useState } from "react";
 import {
+  Animated,
   Image,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
-  Animated,
-  ScrollView,
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Home() {
   const navigation = useNavigation();
-  const anim = useRef(new Animated.Value(0)).current;
+  const animComum = useRef(new Animated.Value(0)).current;
+  const animExtra = useRef(new Animated.Value(0)).current;
   const [progressoComum, setProgressoComum] = useState(0);
+  const [progressoExtra, setProgressoExtra] = useState(0);
 
   const carregarProgresso = async () => {
     try {
-      const valor = await AsyncStorage.getItem("progresso_pratica_comum");
-      const p = valor ? parseFloat(valor) : 0;
-      setProgressoComum(p);
-      Animated.timing(anim, {
-        toValue: p,
+      const valorComum = await AsyncStorage.getItem("progresso_pratica_comum");
+      const valorExtra = await AsyncStorage.getItem("progresso_pratica_extra");
+
+      const pComum = valorComum ? parseFloat(valorComum) : 0;
+      const pExtra = valorExtra ? parseFloat(valorExtra) : 0;
+
+      setProgressoComum(pComum);
+      setProgressoExtra(pExtra);
+
+      Animated.timing(animComum, {
+        toValue: pComum,
+        duration: 900,
+        useNativeDriver: false,
+      }).start();
+
+      Animated.timing(animExtra, {
+        toValue: pExtra,
         duration: 900,
         useNativeDriver: false,
       }).start();
@@ -32,6 +46,13 @@ export default function Home() {
       console.log("Erro ao carregar progresso:", e);
     }
   };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      carregarProgresso();
+    }, [])
+  );
+
 
   useFocusEffect(
     React.useCallback(() => {
@@ -94,17 +115,21 @@ export default function Home() {
         </Pressable>
       </View>
 
-      {/* ===== Quadrado Verde com Ícones (um por linha) ===== */}
+      {/* ===== Quadrado Verde com Ícones (2 por linha) ===== */}
       <View style={styles.greenBox}>
-        {[0, 1, 2, 3].map((i) => (
-          <View key={i} style={styles.circleRow}>
-            <CircleProgress
-              progress={isExtras ? new Animated.Value(1) : anim}
-              onPress={onPress}
-            />
-          </View>
-        ))}
+        <View style={styles.iconGrid}>
+          {[0, 1, 2, 3].map((i) => (
+            <View key={i} style={styles.circleItem}>
+              <CircleProgress
+                progress={isExtras ? animExtra : animComum}
+                onPress={onPress}
+              />
+
+            </View>
+          ))}
+        </View>
       </View>
+
     </>
   );
 
@@ -153,7 +178,7 @@ const styles = StyleSheet.create({
   topIcons: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 30,
+    marginBottom: 10,
   },
   iconItem: {
     flexDirection: "row",
@@ -190,13 +215,20 @@ const styles = StyleSheet.create({
     paddingVertical: 25,
     paddingHorizontal: 10,
     marginTop: 10,
-    marginBottom: 30,
+    marginBottom: 20,// espaçamento entre os caixas
     alignItems: "center",
   },
-  circleRow: {
-    marginVertical: 10, // mantém o mesmo espaçamento vertical entre eles
+  iconGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  circleItem: {
+    width: "50%", // dois ícones por linha
     alignItems: "center",
     justifyContent: "center",
+    marginVertical: 10,
   },
   circleContainer: {
     alignItems: "center",
