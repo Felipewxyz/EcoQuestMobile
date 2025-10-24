@@ -1,9 +1,11 @@
-import React, { useState } from "react";
-import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from "expo-router"; // <--- ADICIONADO
+import { useState } from "react";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function Quests() {
   const [selectedTab, setSelectedTab] = useState("quests");
+  const router = useRouter(); // <--- ADICIONADO
 
   return (
     <View style={styles.container}>
@@ -13,7 +15,10 @@ export default function Quests() {
         <View style={styles.tabButtonsContainer}>
           <View style={styles.tabContainer}>
             <TouchableOpacity
-              onPress={() => setSelectedTab("quests")}
+              onPress={() => {
+                setSelectedTab("quests");
+                router.push("/Quests"); // <-- rota correta
+              }}
               style={styles.tabTouchable}
             >
               <Text
@@ -35,7 +40,10 @@ export default function Quests() {
 
           <View style={styles.tabContainer}>
             <TouchableOpacity
-              onPress={() => setSelectedTab("achievements")}
+              onPress={() => {
+                setSelectedTab("achievements");
+                router.push("/Conquistas"); // <-- alterado para /Conquistas
+              }}
               style={styles.tabTouchable}
             >
               <Text
