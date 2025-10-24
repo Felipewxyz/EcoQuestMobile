@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import React, { useRef, useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Image,
@@ -18,111 +18,79 @@ export default function Home() {
 
   const animComum = useRef(new Animated.Value(0)).current;
   const animExtra = useRef(new Animated.Value(0)).current;
-  const [percentComum, setPercentComum] = useState(0);
-  const [percentExtra, setPercentExtra] = useState(0);
 
+  const [progressoComum, setProgressoComum] = useState(0);
+  const [progressoExtra, setProgressoExtra] = useState(0);
+
+  // --- Função para carregar o progresso de cada tipo ---
   const carregarProgresso = async () => {
     try {
-      // Zera tudo antes de carregar
-      animComum.setValue(0);
-      animExtra.setValue(0);
-      setPercentComum(0);
-      setPercentExtra(0);
-
       const valorComum = await AsyncStorage.getItem("progresso_pratica_comum");
       const valorExtra = await AsyncStorage.getItem("progresso_pratica_extra");
 
       const pComum = valorComum ? parseFloat(valorComum) : 0;
       const pExtra = valorExtra ? parseFloat(valorExtra) : 0;
 
-      // Anima o progresso e a porcentagem
-      Animated.timing(animComum, {
-        toValue: pComum,
-        duration: 1000,
-        useNativeDriver: false,
-      }).start();
+      setProgressoComum(pComum);
+      setProgressoExtra(pExtra);
 
-      Animated.timing(animExtra, {
-        toValue: pExtra,
-        duration: 1000,
-        useNativeDriver: false,
-      }).start();
+      // só anima se tiver progresso real (> 0)
+      if (pComum > 0) {
+        Animated.timing(animComum, {
+          toValue: pComum,
+          duration: 900,
+          useNativeDriver: false,
+        }).start();
+      } else {
+        animComum.setValue(0);
+      }
 
-      // Faz a contagem animada da porcentagem
-      let inicio = 0;
-      const intervalo = setInterval(() => {
-        inicio += 1;
-        if (inicio >= Math.round(pComum * 100)) {
-          inicio = Math.round(pComum * 100);
-          clearInterval(intervalo);
-        }
-        setPercentComum(inicio);
-      }, 10);
-
-      let inicioExtra = 0;
-      const intervaloExtra = setInterval(() => {
-        inicioExtra += 1;
-        if (inicioExtra >= Math.round(pExtra * 100)) {
-          inicioExtra = Math.round(pExtra * 100);
-          clearInterval(intervaloExtra);
-        }
-        setPercentExtra(inicioExtra);
-      }, 10);
+      if (pExtra > 0) {
+        Animated.timing(animExtra, {
+          toValue: pExtra,
+          duration: 900,
+          useNativeDriver: false,
+        }).start();
+      } else {
+        animExtra.setValue(0);
+      }
     } catch (e) {
       console.log("Erro ao carregar progresso:", e);
     }
   };
 
+  // Atualiza sempre que voltar para a Home
   useFocusEffect(
     React.useCallback(() => {
       carregarProgresso();
     }, [])
   );
 
-  const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+  // --- Componente de Barra Circular ---
+  const CircleProgress = ({ animatedValue, size = 90, strokeColor = "#019314" }) => {
+    const strokeWidth = 6;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = 2 * Math.PI * radius;
+    const [percent, setPercent] = useState(0);
 
-const CircleProgress = ({ progress, onPress, size = 90, strokeColor = "#019314" }) => {
-  const strokeWidth = 6;
-  const radius = (size - strokeWidth) / 2;
-  const circumference = 2 * Math.PI * radius;
-
-  const animatedValue = useRef(new Animated.Value(0)).current;
-  const [percent, setPercent] = useState(0);
-
-  useEffect(() => {
-    // Se for null/undefined, zera
-    const validProgress = isNaN(progress) || progress < 0 ? 0 : progress;
-
-    Animated.timing(animatedValue, {
-      toValue: validProgress,
-      duration: 900,
-      useNativeDriver: false,
-    }).start();
-
-    const interval = setInterval(() => {
-      animatedValue.addListener(({ value }) => {
-        const newPercent = Math.round(value * 100);
-        setPercent(isNaN(newPercent) ? 0 : newPercent);
+    useEffect(() => {
+      const id = animatedValue.addListener(({ value }) => {
+        setPercent(Math.max(0, Math.min(100, Math.round(value * 100))));
       });
-    }, 100);
+      return () => animatedValue.removeListener(id);
+    }, [animatedValue]);
 
-    return () => {
-      animatedValue.removeAllListeners();
-      clearInterval(interval);
-    };
-  }, [progress]);
+    const animatedStroke = animatedValue.interpolate({
+      inputRange: [0, 1],
+      outputRange: [circumference, 0],
+    });
 
-  const animatedStroke = animatedValue.interpolate({
-    inputRange: [0, 1],
-    outputRange: [circumference, 0],
-  });
+    const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-  const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-
-  return (
-    <Pressable onPress={onPress}>
+    return (
       <View style={[styles.circleContainer, { width: size, height: size }]}>
         <Svg width={size} height={size}>
+          {/* fundo cinza */}
           <Circle
             stroke="#C8C8C8"
             fill="none"
@@ -131,6 +99,7 @@ const CircleProgress = ({ progress, onPress, size = 90, strokeColor = "#019314" 
             r={radius}
             strokeWidth={strokeWidth}
           />
+          {/* barra da esquerda pra direita */}
           <AnimatedCircle
             stroke={strokeColor}
             fill="none"
@@ -141,25 +110,24 @@ const CircleProgress = ({ progress, onPress, size = 90, strokeColor = "#019314" 
             strokeDasharray={circumference}
             strokeDashoffset={animatedStroke}
             strokeLinecap="round"
-            // Começa às 6h e vai no sentido horário
-            transform={`rotate(90 ${size / 2} ${size / 2}) scale(1, -1) translate(0, -${size})`}
+            transform={`rotate(-90 ${size / 2} ${size / 2})`}
           />
         </Svg>
+
+        {/* porcentagem central */}
         <View style={styles.iconInside}>
           <Text style={{ fontSize: 18, fontWeight: "bold", color: strokeColor }}>
             {percent}%
           </Text>
         </View>
       </View>
-    </Pressable>
-  );
-};
+    );
+  };
 
-
-
-  const BlocoTema = ({ title, onPress, isExtras }) => (
+  // --- Bloco de cada tema ---
+  const BlocoTema = ({ title, onPress, tipo }) => (
     <>
-      {/* ===== Caixa X.1 ===== */}
+      {/* Caixa 1.1 e 2.1 */}
       <View style={styles.themeBox}>
         <View style={styles.themeTextContainer}>
           <Text style={styles.themeTitle}>TEMA 01</Text>
@@ -171,16 +139,16 @@ const CircleProgress = ({ progress, onPress, size = 90, strokeColor = "#019314" 
         </Pressable>
       </View>
 
-      {/* ===== Caixa X.2 ===== */}
+      {/* Caixa 1.2 e 2.2 */}
       <View style={styles.greenBox}>
         <View style={styles.iconGrid}>
           {[0, 1, 2, 3].map((i) => (
             <View key={i} style={styles.circleItem}>
-              <CircleProgress
-                progress={isExtras ? animExtra : animComum}
-                percent={isExtras ? percentExtra : percentComum}
-                onPress={onPress}
-              />
+              <Pressable onPress={onPress}>
+                <CircleProgress
+                  animatedValue={tipo === "extra" ? animExtra : animComum}
+                />
+              </Pressable>
             </View>
           ))}
         </View>
@@ -188,9 +156,10 @@ const CircleProgress = ({ progress, onPress, size = 90, strokeColor = "#019314" 
     </>
   );
 
+  // --- Renderização principal ---
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
-      {/* ===== Roda-teto ===== */}
+      {/* Roda-teto */}
       <View style={styles.topIcons}>
         <View style={styles.iconItem}>
           <Image source={require("../../assets/images/gota.png")} style={styles.icon} />
@@ -206,28 +175,27 @@ const CircleProgress = ({ progress, onPress, size = 90, strokeColor = "#019314" 
         </View>
       </View>
 
-      {/* ===== Caixa 1 (Práticas Comuns) ===== */}
+      {/* Caixa 1 - Práticas Comuns */}
       <BlocoTema
         title="Práticas Comuns"
         onPress={() => navigation.navigate("PraticaComum")}
-        isExtras={false}
+        tipo="comum"
       />
 
-      {/* ===== Caixa 2 (Práticas Extras) ===== */}
+      {/* Caixa 2 - Práticas Extras */}
       <BlocoTema
         title="Práticas Extras"
         onPress={() => navigation.navigate("PraticaExtra")}
-        isExtras={true}
+        tipo="extra"
       />
 
-      {/* ===== Roda-pé ===== */}
-      <View style={styles.footer}>
-        <Text style={styles.footerText}>EcoQuest 🌿 • Cuidar do planeta é evoluir</Text>
-      </View>
+      {/* Roda-pé */}
+      <View style={{ height: 30 }} />
     </ScrollView>
   );
 }
 
+// --- Estilos ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -298,22 +266,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: "50%",
     left: "50%",
-    transform: [{ translateX: -17 }, { translateY: -12 }],
-  },
-  percentText: {
-    fontSize: 17,
-    fontWeight: "bold",
-    color: "#019314",
-  },
-  footer: {
-    marginTop: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 15,
-  },
-  footerText: {
-    color: "#019314",
-    fontSize: 14,
-    opacity: 0.7,
+    transform: [{ translateX: -16 }, { translateY: -16 }],
   },
 });

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { StyleSheet, Text, View, TouchableOpacity, Dimensions } from "react-native";
+import { StyleSheet, Text, View, TouchableOpacity } from "react-native";
 import { Ionicons } from '@expo/vector-icons';
 
 export default function Quests() {
@@ -11,7 +11,6 @@ export default function Quests() {
       <View style={styles.headerContainer}>
         {/* 2 botões */}
         <View style={styles.tabButtonsContainer}>
-          {/* Botão Quests */}
           <View style={styles.tabContainer}>
             <TouchableOpacity
               onPress={() => setSelectedTab("quests")}
@@ -34,7 +33,6 @@ export default function Quests() {
             />
           </View>
 
-          {/* Botão Conquistas */}
           <View style={styles.tabContainer}>
             <TouchableOpacity
               onPress={() => setSelectedTab("achievements")}
@@ -64,19 +62,18 @@ export default function Quests() {
 
         {/* Cabeçalho da quest */}
         <View style={styles.questHeaderContainer}>
-          {/* Mês */}
-          <View style={styles.monthContainer}>
-            <Text style={styles.monthText}>Junho</Text>
-          </View>
-
-          {/* Título e imagem */}
           <View style={styles.questRow}>
-            <Text style={styles.questTitleText}>Arraia{'\n'}Quest</Text>
+            <View style={styles.titleGroup}>
+              <View style={styles.monthContainer}>
+                <Text style={styles.monthText}>Junho</Text>
+              </View>
+              <Text style={styles.questTitleText}>Arraia{'\n'}Quest</Text>
+            </View>
             <View style={styles.questImagePlaceholder} />
           </View>
         </View>
 
-        {/* Quest diária */}
+        {/* Quest diária resumida */}
         <View style={styles.dailyQuestContainer}>
           <View style={styles.dailyHeader}>
             <Ionicons name="time-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
@@ -95,8 +92,38 @@ export default function Quests() {
         </View>
       </View>
 
-      {/* Espaço branco inferior */}
-      <View style={styles.bottomContainer} />
+      {/* Parte branca inferior */}
+      <View style={styles.bottomContainer}>
+        <Text style={styles.dailyTitle}>Quests Diárias</Text>
+
+        {/* Quadrado com borda arredondada e barras */}
+        <View style={styles.questsBox}>
+          {[1, 2, 3].map((_, i) => (
+            <View key={i} style={styles.questProgressContainer}>
+              {/* Ícone + frase */}
+              <View style={styles.textRow}>
+                <Ionicons
+                  name="leaf-outline"
+                  size={22}
+                  color="#1E90FF"
+                  style={styles.icon}
+                />
+                <Text style={styles.questDescription}>Complete 2 práticas</Text>
+              </View>
+
+              {/* Barra de progresso */}
+              <View style={styles.progressOuter}>
+                <View style={styles.progressInner}>
+                  <Text style={styles.progressText}>01/02</Text>
+                </View>
+              </View>
+
+              {/* Barra separadora */}
+              {i < 2 && <View style={styles.separator} />}
+            </View>
+          ))}
+        </View>
+      </View>
     </View>
   );
 }
@@ -110,12 +137,11 @@ const styles = StyleSheet.create({
   // Fundo azul superior
   headerContainer: {
     backgroundColor: "#1E90FF",
-    paddingTop: 20,
+    paddingTop: 10,
     paddingHorizontal: 16,
-    paddingBottom: 40,
+    paddingBottom: 20,
   },
 
-  // 2 botões
   tabButtonsContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -125,12 +151,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   tabTouchable: {
-    paddingVertical: 16,
+    paddingVertical: 10,
     width: "100%",
     alignItems: "center",
   },
   tabText: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: "900",
   },
   tabTextSelected: {
@@ -141,10 +167,8 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     opacity: 0.5,
   },
-
-  // Barra de cada botão
   tabBar: {
-    height: 6,
+    height: 5,
     width: "90%",
     borderRadius: 3,
     marginTop: -1,
@@ -158,81 +182,85 @@ const styles = StyleSheet.create({
     opacity: 0.3,
   },
 
-  // Cabeçalho da quest
   questHeaderContainer: {
-    marginTop: 20,
-    marginBottom: 20,
-  },
-  monthContainer: {
-    backgroundColor: "#FFFFFF",
-    paddingVertical: 6,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignSelf: "flex-start",
-    marginBottom: 12,
-  },
-  monthText: {
-    color: "#1E90FF",
-    fontSize: 22,
-    fontWeight: "900",
+    marginTop: 10,
+    marginBottom: 10,
   },
   questRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
+  titleGroup: {
+    justifyContent: "center",
+  },
+  monthContainer: {
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 3,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    alignSelf: "flex-start",
+    marginBottom: 6,
+  },
+  monthText: {
+    color: "#1E90FF",
+    fontSize: 14,
+    fontWeight: "900",
+  },
   questTitleText: {
     color: "#FFFFFF",
-    fontSize: 28,
+    fontSize: 40,
     fontWeight: "900",
+    lineHeight: 48,
+    letterSpacing: 2,
     textAlign: "left",
   },
   questImagePlaceholder: {
-    width: 120,
-    height: 120,
+    width: 150,
+    height: 150,
     backgroundColor: "#FFFFFF",
-    borderRadius: 12,
+    borderRadius: 16,
   },
 
-  // Quest diária
+  // Quest diária resumida
   dailyQuestContainer: {
-    marginTop: 12,
+    marginTop: 10,
   },
   dailyHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   daysText: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "bold",
   },
   dailyQuestBox: {
     backgroundColor: "rgba(0,0,0,0.3)",
     borderRadius: 10,
-    padding: 16,
+    padding: 14,
     width: "100%",
   },
   dailyQuestText: {
     color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "bold",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   dailyQuestCompleted: {
     position: "absolute",
-    right: 16,
-    top: 18,
-    fontSize: 16,
+    right: 14,
+    top: 16,
+    fontSize: 15,
     fontWeight: "bold",
   },
   progressBar: {
-    height: 12,
+    height: 10,
     backgroundColor: "rgba(255,255,255,0.5)",
-    borderRadius: 6,
+    borderRadius: 5,
     overflow: "hidden",
-    marginTop: 12,
+    marginTop: 10,
   },
   progressFill: {
     width: "50%",
@@ -240,9 +268,76 @@ const styles = StyleSheet.create({
     backgroundColor: "#1E90FF",
   },
 
-  // Espaço branco inferior
+  // Parte branca inferior
   bottomContainer: {
     flex: 1,
     backgroundColor: "#FFFFFF",
+    padding: 16,
+  },
+  dailyTitle: {
+    color: "#1E90FF",
+    fontSize: 26,
+    fontWeight: "900",
+    marginBottom: 16,
+  },
+
+  // Quadrado de Quests Diárias
+  questsBox: {
+    borderWidth: 2,
+    borderColor: "rgba(30,144,255,0.4)",
+    borderRadius: 16,
+    padding: 16,
+  },
+
+  questProgressContainer: {
+    marginBottom: 14,
+  },
+
+  // Ícone + frase
+  textRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  icon: {
+    marginRight: 8,
+  },
+  questDescription: {
+    color: "#1E90FF",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+
+  // Barra de progresso
+  progressOuter: {
+    width: "100%",
+    height: 20,
+    backgroundColor: "rgba(30,144,255,0.2)",
+    borderRadius: 10,
+    overflow: "hidden",
+    justifyContent: "center",
+  },
+  progressInner: {
+    width: "50%",
+    height: "100%",
+    backgroundColor: "#1E90FF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  progressText: {
+    color: "#FFFFFF",
+    fontWeight: "bold",
+    fontSize: 13,
+  },
+
+  // Barras separadoras mais compridas
+  separator: {
+    width: "95%",
+    height: 3,
+    backgroundColor: "rgba(30,144,255,0.25)",
+    marginTop: 14,
+    marginBottom: 6,
+    alignSelf: "center",
+    borderRadius: 3,
   },
 });
