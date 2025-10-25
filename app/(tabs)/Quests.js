@@ -2,10 +2,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from "expo-router"; // <--- ADICIONADO
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { usePathname } from "expo-router";
+
 
 export default function Quests() {
   const [selectedTab, setSelectedTab] = useState("quests");
   const router = useRouter(); // <--- ADICIONADO
+  
 
   return (
     <View style={styles.container}>
@@ -13,59 +16,69 @@ export default function Quests() {
       <View style={styles.headerContainer}>
         {/* 2 botões */}
         <View style={styles.tabButtonsContainer}>
-          <View style={styles.tabContainer}>
-            <TouchableOpacity
-              onPress={() => {
-                setSelectedTab("quests");
-                router.push("/Quests"); // <-- rota correta
-              }}
-              style={styles.tabTouchable}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  selectedTab === "quests" ? styles.tabTextSelected : styles.tabTextUnselected,
-                ]}
-              >
-                Quests
-              </Text>
-            </TouchableOpacity>
-            <View
-              style={[
-                styles.tabBar,
-                selectedTab === "quests" ? styles.tabBarActive : styles.tabBarInactive,
-              ]}
-            />
-          </View>
+          {(() => {
+            const pathname = usePathname(); // detecta a rota atual
+            const isQuests = pathname?.toLowerCase().includes("quests");
+            const isConquistas = pathname?.toLowerCase().includes("conquistas");
 
-          <View style={styles.tabContainer}>
-            <TouchableOpacity
-              onPress={() => {
-                setSelectedTab("achievements");
-                router.push("/Conquistas"); // <-- alterado para /Conquistas
-              }}
-              style={styles.tabTouchable}
-            >
-              <Text
-                style={[
-                  styles.tabText,
-                  selectedTab === "achievements"
-                    ? styles.tabTextSelected
-                    : styles.tabTextUnselected,
-                ]}
-              >
-                Conquistas
-              </Text>
-            </TouchableOpacity>
-            <View
-              style={[
-                styles.tabBar,
-                selectedTab === "achievements"
-                  ? styles.tabBarActive
-                  : styles.tabBarInactive,
-              ]}
-            />
-          </View>
+            return (
+              <>
+                {/* Botão Quests */}
+                <View style={styles.tabContainer}>
+                  <TouchableOpacity
+                    onPress={() => router.push("/Quests")}
+                    style={styles.tabTouchable}
+                  >
+                    <Text
+                      style={[
+                        styles.tabText,
+                        isQuests
+                          ? styles.tabTextSelected
+                          : styles.tabTextUnselected,
+                      ]}
+                    >
+                      Quests
+                    </Text>
+                  </TouchableOpacity>
+                  <View
+                    style={[
+                      styles.tabBar,
+                      isQuests
+                        ? styles.tabBarActive
+                        : styles.tabBarInactive,
+                    ]}
+                  />
+                </View>
+
+                {/* Botão Conquistas */}
+                <View style={styles.tabContainer}>
+                  <TouchableOpacity
+                    onPress={() => router.push("/Conquistas")}
+                    style={styles.tabTouchable}
+                  >
+                    <Text
+                      style={[
+                        styles.tabText,
+                        isConquistas
+                          ? styles.tabTextSelected
+                          : styles.tabTextUnselected,
+                      ]}
+                    >
+                      Conquistas
+                    </Text>
+                  </TouchableOpacity>
+                  <View
+                    style={[
+                      styles.tabBar,
+                      isConquistas
+                        ? styles.tabBarActive
+                        : styles.tabBarInactive,
+                    ]}
+                  />
+                </View>
+              </>
+            );
+          })()}
         </View>
 
         {/* Cabeçalho da quest */}
