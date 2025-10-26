@@ -11,31 +11,31 @@ export default function Quests() {
   // imagens e nomes (mesma ordem das conquistas)
   const imagesList = [
     require("../../assets/images/AnoNovoPlanetaNovo.png"),
-    require("../../assets/images/EcoFolia.png"),
+    require("../../assets/images/FoliaResponsavel.png"),
     require("../../assets/images/GuardiaDaAgua.png"),
     require("../../assets/images/HeroiDaTerra.png"),
     require("../../assets/images/MaeNatureza.png"),
     require("../../assets/images/ArraiaQuest.png"),
     require("../../assets/images/FeriasEcologicas.png"),
     require("../../assets/images/CavaleiroDoVento.png"),
-    require("../../assets/images/JardineiraDoPlaneta.png"),
+    require("../../assets/images/PulmoesDoMundo.png"),
     require("../../assets/images/AssombracaoDoLixo.png"),
-    require("../../assets/images/CaminhanteDoBem.png"),
+    require("../../assets/images/EcoDaAlianca.png"),
     require("../../assets/images/RetrospectivaSustentavel.png"),
   ];
 
   const titlesList = [
     "Ano Novo, Planeta Novo",
-    "Eco Folia",
+    "Folia Responsável",
     "Guardião da Água",
     "Herói da Terra",
     "Mãe Natureza",
     "Arraia Quest",
     "Férias Ecológicas",
     "Cavaleiro do Vento",
-    "Jardineira do Planeta",
+    "Pulmões do Mundo",
     "Assombração do Lixo",
-    "Caminhante do Bem",
+    "Eco da Aliança",
     "Retrospectiva Sustentável",
   ];
 

@@ -27,18 +27,18 @@ export default function Conquistas() {
 
   // Lista de 12 imagens (mantive exatamente os nomes de arquivo)
   const imagesList = [
-    { file: "AnoNovoPlanetaNovo.png", title: "Ano Novo, Planeta Novo", src: require("../../assets/images/AnoNovoPlanetaNovo.png"), resumo: "Comece o ano com hábitos que cuidam do planeta." },
-    { file: "EcoFolia.png", title: "Eco Folia", src: require("../../assets/images/EcoFolia.png"), resumo: "Curta as festas sem deixar rastros — diversão responsável." },
-    { file: "GuardiaDaAgua.png", title: "Guardião da Água", src: require("../../assets/images/GuardiaDaAgua.png"), resumo: "Pequenas economias de água fazem grande diferença." },
-    { file: "HeroiDaTerra.png", title: "Herói da Terra", src: require("../../assets/images/HeroiDaTerra.png"), resumo: "Proteja o solo e os ecossistemas locais." },
-    { file: "MaeNatureza.png", title: "Mãe Natureza", src: require("../../assets/images/MaeNatureza.png"), resumo: "Cuide das plantas e da fauna ao seu redor." },
-    { file: "ArraiaQuest.png", title: "Arraia Quest", src: require("../../assets/images/ArraiaQuest.png"), resumo: "Atue pela limpeza e proteção dos mares." },
-    { file: "FeriasEcologicas.png", title: "Férias Ecológicas", src: require("../../assets/images/FeriasEcologicas.png"), resumo: "Aproveite atividades sustentáveis nas férias." },
-    { file: "CavaleiroDoVento.png", title: "Cavaleiro do Vento", src: require("../../assets/images/CavaleiroDoVento.png"), resumo: "Incentive meios de transporte limpos e o ar puro." },
-    { file: "JardineiraDoPlaneta.png", title: "Jardineira do Planeta", src: require("../../assets/images/JardineiraDoPlaneta.png"), resumo: "Plante, regue e veja a vida florescer." },
-    { file: "AssombracaoDoLixo.png", title: "Assombração do Lixo", src: require("../../assets/images/AssombracaoDoLixo.png"), resumo: "Separe resíduos e combata o descarte incorreto." },
-    { file: "CaminhanteDoBem.png", title: "Caminhante do Bem", src: require("../../assets/images/CaminhanteDoBem.png"), resumo: "Cada passo sustentável ajuda o planeta." },
-    { file: "RetrospectivaSustentavel.png", title: "Retrospectiva Sustentável", src: require("../../assets/images/RetrospectivaSustentavel.png"), resumo: "Reviva as ações do ano e celebre o progresso." },
+    { file: "AnoNovoPlanetaNovo.png", title: "Ano Novo, Planeta Novo", src: require("../../assets/images/AnoNovoPlanetaNovo.png"), resumo: "Seu novo ano planta sementes para um planeta renascido." },
+    { file: "FoliaResponsavel.png", title: "Folia Responsável", src: require("../../assets/images/FoliaResponsavel.png"), resumo: "Sua folia deixa marcas na memória, não na Terra." },
+    { file: "GuardiaDaAgua.png", title: "Guardião da Água", src: require("../../assets/images/GuardiaDaAgua.png"), resumo: "Cada gota que se torna um rio de esperança." },
+    { file: "HeroiDaTerra.png", title: "Herói da Terra", src: require("../../assets/images/HeroiDaTerra.png"), resumo: "Suas mãos são o escudo que a Terra esperava." },
+    { file: "MaeNatureza.png", title: "Mãe Natureza", src: require("../../assets/images/MaeNatureza.png"), resumo: "Seu cuidado nutre a vida como a natureza sempre fez." },
+    { file: "ArraiaQuest.png", title: "Arraia Quest", src: require("../../assets/images/ArraiaQuest.png"), resumo: "Sua festa junina pisa forte mas deixa pegada leve." },
+    { file: "FeriasEcologicas.png", title: "Férias Ecológicas", src: require("../../assets/images/FeriasEcologicas.png"), resumo: "Suas férias renovam você sem custo para o planeta." },
+    { file: "CavaleiroDoVento.png", title: "Cavaleiro do Vento", src: require("../../assets/images/CavaleiroDoVento.png"), resumo: "Você cavalga com o vento, não contra ele." },
+    { file: "PulmoesDoMundo.png", title: "Pulmões do Mundo", src: require("../../assets/images/PulmoesDoMundo.png"), resumo: "Suas mãos guardam o coração verde do planeta." },
+    { file: "AssombracaoDoLixo.png", title: "Assombração do Lixo", src: require("../../assets/images/AssombracaoDoLixo.png"), resumo: "Você assusta o lixo para fora do planeta." },
+    { file: "EcoDaAlianca.png", title: "Eco da Aliança", src: require("../../assets/images/EcoDaAlianca.png"), resumo: "Seu abraço silencia ameaças e amplifica cantos." },
+    { file: "RetrospectivaSustentavel.png", title: "Retrospectiva Sustentável", src: require("../../assets/images/RetrospectivaSustentavel.png"), resumo: "Seu ano deixou histórias, não pegadas." },
   ];
 
   const months = ["Jan.", "Fev.", "Mar.", "Abr.", "Mai.", "Jun.", "Jul.", "Ago.", "Set.", "Out.", "Nov.", "Dez."];
