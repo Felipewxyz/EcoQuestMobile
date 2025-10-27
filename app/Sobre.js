@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View, Dimensions } from 'react-native';
+
+const { width } = Dimensions.get('window');
 
 export default function Sobre() {
   const navigation = useNavigation();
@@ -24,6 +26,7 @@ export default function Sobre() {
           QUAIS SÃO OS OBJETIVOS{'\n'}DO APLICATIVO:
         </Text>
 
+        {/* imagens responsivas */}
         <Image source={require('../assets/images/sobre1.png')} style={styles.imagem} />
         <Image source={require('../assets/images/sobre2.png')} style={styles.imagem} />
         <Image source={require('../assets/images/sobre3.png')} style={styles.imagem} />
@@ -31,9 +34,9 @@ export default function Sobre() {
         <Image source={require('../assets/images/sobre5.png')} style={styles.imagem} />
         <Image source={require('../assets/images/sobre6.png')} style={styles.imagem} />
 
-        <TouchableOpacity 
-        style={styles.botaoEntrar}
-        onPress={() => navigation.navigate('Cadastro')}>
+        <TouchableOpacity
+          style={styles.botaoEntrar}
+          onPress={() => navigation.navigate('Cadastro')}>
           <Text style={styles.textoBotao}>CADASTRE-SE</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -45,6 +48,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#ffffff',
+    paddingHorizontal: 0, // tiramos o padding para deixar as imagens encostarem na borda
   },
   backButton: {
     position: 'absolute',
@@ -64,7 +68,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    alignItems: 'center',
+    alignItems: 'stretch', // mantém as imagens coladas nas bordas
     paddingTop: 100,
     paddingBottom: 40,
   },
@@ -72,6 +76,7 @@ const styles = StyleSheet.create({
     width: 280,
     height: 180,
     marginBottom: 20,
+    alignSelf: 'center', // ✅ centraliza a logo
   },
   title: {
     fontSize: 22,
@@ -79,11 +84,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     color: '#000',
     marginBottom: 10,
+    paddingHorizontal: 10,
   },
   imagem: {
-    width: 380,
-    height: 240,
+    width: '100%',
+    height: width * 0.63,
     marginVertical: 10,
+    resizeMode: 'contain',
   },
   botaoEntrar: {
     backgroundColor: '#019314',
@@ -92,6 +99,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     marginBottom: 30,
     width: 260,
+    alignSelf: 'center', // ✅ centraliza o botão
   },
   textoBotao: {
     textAlign: 'center',

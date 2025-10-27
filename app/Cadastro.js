@@ -12,11 +12,32 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Alert
 } from 'react-native';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function Cadastro() {
   const navigation = useNavigation();
   const [senhaVisivel, setSenhaVisivel] = useState(false);
+  const [fotoPerfil, setFotoPerfil] = useState(null);
+
+  const escolherImagem = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permissão necessária', 'Precisamos da sua permissão para acessar as fotos.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setFotoPerfil(result.assets[0].uri);
+    }
+  };
 
   return (
     <ImageBackground
@@ -36,54 +57,67 @@ export default function Cadastro() {
         keyboardVerticalOffset={80}
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.container}>
-            <Image
-              source={require('../assets/images/logo.png')}
-              style={styles.logo}
-              resizeMode="contain"
-            />
 
-            <Text style={styles.title}>CADASTRE-SE AQUI</Text>
+          {/* Logo no topo */}
+          <Image
+            source={require('../assets/images/logo.png')}
+            style={styles.logo}
+            resizeMode="contain"
+          />
 
+          {/* Foto de Perfil maior/larga */}
+          <TouchableOpacity style={styles.fotoContainer} onPress={escolherImagem}>
+            {fotoPerfil ? (
+              <Image source={{ uri: fotoPerfil }} style={styles.fotoPerfil} />
+            ) : (
+              <View style={styles.fotoPlaceholder}>
+                <Ionicons name="person-outline" size={60} color="#156499" />
+                <Text style={styles.textoFoto}>Adicionar foto de perfil</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+
+          <Text style={styles.title}>CADASTRE-SE AQUI</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="adicione seu nome"
+            placeholderTextColor="#666"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="crie seu nome de usuário"
+            placeholderTextColor="#666"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="adicione seu email"
+            keyboardType="email-address"
+            placeholderTextColor="#666"
+          />
+          <View style={styles.ContainerPassword}>
             <TextInput
-              style={styles.input}
-              placeholder="adicione seu nome"
+              style={styles.inputSenha}
+              placeholder="crie sua senha"
+              secureTextEntry={!senhaVisivel}
               placeholderTextColor="#666"
             />
-            <TextInput
-              style={styles.input}
-              placeholder="crie seu nome de usuário"
-              placeholderTextColor="#666"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="adicione seu email"
-              keyboardType="email-address"
-              placeholderTextColor="#666"
-            />
-            <View style={styles.ContainerPassword}>
-              <TextInput
-                style={styles.inputSenha}
-                placeholder="crie sua senha"
-                secureTextEntry={!senhaVisivel}
-                placeholderTextColor="#666"
+            <TouchableOpacity onPress={() => setSenhaVisivel(!senhaVisivel)}>
+              <Ionicons
+                name={senhaVisivel ? 'eye-off' : 'eye'}
+                size={22}
+                color="#666"
+                style={styles.EyeIcon}
               />
-              <TouchableOpacity onPress={() => setSenhaVisivel(!senhaVisivel)}>
-                <Ionicons
-                  name={senhaVisivel ? 'eye-off' : 'eye'}
-                  size={22}
-                  color="#666"
-                  style={styles.EyeIcon}
-                />
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity 
-            style={styles.ButtonCadastro}
-            onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.ButtonText}>CONCLUIR CADASTRO</Text>
             </TouchableOpacity>
           </View>
+
+          <TouchableOpacity
+            style={styles.ButtonCadastro}
+            onPress={() => navigation.navigate('Login')}
+          >
+            <Text style={styles.ButtonText}>CONCLUIR CADASTRO</Text>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </ImageBackground>
@@ -97,7 +131,8 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
-    paddingTop: 60,
+    paddingVertical: 40,
+    paddingHorizontal: 20,
   },
   backButton: {
     position: 'absolute',
@@ -114,17 +149,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  container: {
-    backgroundColor: 'rgba(255,255,255,0.05)',
-    borderRadius: 20,
-    paddingVertical: 40,
-    paddingHorizontal: 30,
-    marginHorizontal: 30,
-    alignItems: 'center',
-  },
   logo: {
     width: 260,
     height: 160,
+    alignSelf: 'center',
     marginBottom: 30,
   },
   title: {
@@ -132,6 +160,7 @@ const styles = StyleSheet.create({
     color: '#156499',
     fontWeight: 'bold',
     marginBottom: 30,
+    textAlign: 'center',
   },
   input: {
     backgroundColor: '#fff',
@@ -139,8 +168,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 15,
     marginBottom: 16,
-    width: 260,
+    width: 260, // largura fixa menor
     fontSize: 15,
+    alignSelf: 'center',
   },
   inputSenha: {
     flex: 1,
@@ -151,19 +181,20 @@ const styles = StyleSheet.create({
   ContainerPassword: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: 260,
+    width: 260, // mesma largura dos inputs
     backgroundColor: '#fff',
     borderRadius: 6,
     paddingHorizontal: 0,
     marginBottom: 30,
+    alignSelf: 'center',
   },
   ButtonCadastro: {
     backgroundColor: '#019314',
     paddingVertical: 16,
-    paddingHorizontal: 40,
     borderRadius: 8,
-    width: '100%',
+    width: 260, // mesma largura dos inputs
     alignItems: 'center',
+    alignSelf: 'center',
   },
   ButtonText: {
     color: '#fff',
@@ -171,7 +202,40 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   EyeIcon: {
-  marginLeft: 10,
-  marginRight: 10,
-},
+    marginLeft: 10,
+    marginRight: 10,
+  },
+  // Quadrado da foto levemente mais largo e menor de altura
+  fotoContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 25,
+    width: 200, // um pouco mais largo
+    height: 180, // menor de altura
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#fff',
+    backgroundColor: 'rgba(255,255,255,0.5)',
+    overflow: 'hidden',
+    alignSelf: 'center',
+  },
+  fotoPerfil: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 20,
+  },
+  fotoPlaceholder: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  textoFoto: {
+    color: '#156499',
+    fontSize: 14,
+    marginTop: 8,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
 });
