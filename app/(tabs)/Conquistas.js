@@ -136,35 +136,81 @@ export default function Conquistas() {
       </ScrollView>
 
       {/* modal com fechar + ver detalhes */}
-      <Modal visible={!!selectedImage} transparent animationType="fade" onRequestClose={() => setSelectedImage(null)}>
+      <Modal
+        visible={!!selectedImage}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedImage(null)}
+      >
         <View style={styles.modalBackground}>
           <View style={styles.modalBox}>
             {selectedImage && (
               <>
-                <Image source={imagesList[selectedImage.index].src} style={styles.modalImage} />
-                <Text style={styles.modalTitle}>{imagesList[selectedImage.index].title}</Text>
-                <Text style={styles.modalDescription}>{imagesList[selectedImage.index].resumo}</Text>
-
-                <Text style={[styles.modalSubtitle, selectedImage.locked ? styles.lockedText : styles.unlockedText]}>
-                  {selectedImage.locked ? "❌ Não foi dessa vez... mais sorte na próxima!" : "🏆 Conquista recebida!"}
+                <Image
+                  source={imagesList[selectedImage.index].src}
+                  style={styles.modalImage}
+                />
+                <Text style={styles.modalTitle}>
+                  {imagesList[selectedImage.index].title}
+                </Text>
+                <Text style={styles.modalDescription}>
+                  {imagesList[selectedImage.index].resumo}
                 </Text>
 
+                {(() => {
+                  const currentMonth = new Date().getMonth(); // mês atual (0 a 11)
+                  const imgMonth = selectedImage.index;
+                  const isFutureMonth = imgMonth > currentMonth;
+                  const isCurrentMonth = imgMonth === currentMonth;
+                  const isLocked = lockedMonths.includes(imgMonth);
+
+                  if (isFutureMonth) {
+                    return (
+                      <Text style={[styles.modalSubtitle, { color: "#FFA500" }]}>
+                        ⏳ Espere mais um pouco...
+                      </Text>
+                    );
+                  } else if (isCurrentMonth) {
+                    return (
+                      <Text style={[styles.modalSubtitle, { color: "#1E90FF" }]}>
+                        🔄 Em andamento!
+                      </Text>
+                    );
+                  } else if (isLocked) {
+                    return (
+                      <Text style={[styles.modalSubtitle, styles.lockedText]}>
+                        ❌ Não foi dessa vez... mais sorte na próxima!
+                      </Text>
+                    );
+                  } else {
+                    return (
+                      <Text style={[styles.modalSubtitle, styles.unlockedText]}>
+                        🏆 Conquista recebida!
+                      </Text>
+                    );
+                  }
+                })()}
+
                 <View style={styles.modalButtonsRow}>
-                  <TouchableOpacity style={[styles.modalButton, { backgroundColor: "#ccc" }]} onPress={() => setSelectedImage(null)}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, { backgroundColor: "#ccc" }]}
+                    onPress={() => setSelectedImage(null)}
+                  >
                     <Text style={{ color: "#000", fontWeight: "bold" }}>Fechar</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
                     style={[styles.modalButton, { backgroundColor: "#1E90FF" }]}
                     onPress={() => {
-                      // navega pra Quests com monthIndex e title; usa string query pra evitar comportamento estranho
                       const idx = selectedImage.index;
                       const title = encodeURIComponent(imagesList[idx].title);
                       setSelectedImage(null);
                       router.push(`/Quests?monthIndex=${idx}&title=${title}`);
                     }}
                   >
-                    <Text style={{ color: "#fff", fontWeight: "bold" }}>Ver detalhes</Text>
+                    <Text style={{ color: "#fff", fontWeight: "bold" }}>
+                      Ver detalhes
+                    </Text>
                   </TouchableOpacity>
                 </View>
               </>

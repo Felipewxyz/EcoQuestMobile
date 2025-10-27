@@ -1,14 +1,13 @@
 import { Ionicons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter, usePathname } from "expo-router";
+import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View, ScrollView } from "react-native";
+import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function Quests() {
   const router = useRouter();
   const pathname = usePathname();
   const params = useLocalSearchParams();
 
-  // imagens e nomes (mesma ordem das conquistas)
   const imagesList = [
     require("../../assets/images/AnoNovoPlanetaNovo.png"),
     require("../../assets/images/FoliaResponsavel.png"),
@@ -44,75 +43,42 @@ export default function Quests() {
     "Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"
   ];
 
-  // detecta mês atual do dispositivo
   const currentMonthIndex = new Date().getMonth();
-
-  // se veio monthIndex por query, usa; se não, abre no mês atual
   const monthIndexParam = typeof params?.monthIndex !== "undefined" ? Number(params.monthIndex) : undefined;
   const titleParam = params?.title ? decodeURIComponent(String(params.title)) : undefined;
-
   const [headerMonthIndex, setHeaderMonthIndex] = useState(monthIndexParam ?? currentMonthIndex);
 
-  // exemplo: quais meses estão completos (você deve persistir/atualizar isso real no seu app)
-  const completedMonths = [0, 1, 2, 4, 5, 7, 8, 9]; // ex.: 9 (outubro) como completado no demo
-  const lockedMonths = [3, 6, 10, 11]; // Abril, Julho, Novembro, Dezembro (bloqueados no Conquistas)
+  // Exemplo de estado (você depois vai puxar do backend/local storage)
+  const completedMonths = [0, 1, 2, 4, 5, 7, 8, 9];
+  const lockedMonths = [3, 6, 10, 11];
 
-  // dados de progresso (mock)
-  const [dailyProgress, setDailyProgress] = useState({ completed: 20, total: 30 });
+  // aqui está o "20" que você queria ver em azul
+  const [dailyProgress] = useState({ completed: 20, total: 30 });
 
   useEffect(() => {
-    // se navegar com param, atualiza
     if (typeof monthIndexParam === "number" && !isNaN(monthIndexParam)) {
       setHeaderMonthIndex(monthIndexParam);
     }
   }, [monthIndexParam]);
 
-  // derive estados
   const isCurrent = headerMonthIndex === currentMonthIndex;
   const isFuture = headerMonthIndex > currentMonthIndex;
   const isPast = headerMonthIndex < currentMonthIndex;
   const isLocked = lockedMonths.includes(headerMonthIndex);
-  const isCompleted = completedMonths.includes(headerMonthIndex) && !isLocked; // if locked, treat as locked
-
-  // ajustes visuais e mensagens
-  let messageBlock = null;
-  if (isCurrent) {
-    // mantém o layout normal (barras etc.)
-    messageBlock = null;
-  } else if (isFuture) {
-    messageBlock = {
-      title: "🌱 Espere mais um pouco",
-      desc: "O próximo desafio está germinando — prepare-se para ajudar a natureza em breve!",
-      style: "future",
-    };
-  } else {
-    // passado
-    if (isCompleted) {
-      messageBlock = {
-        title: "🌎 Parabéns!",
-        desc: "Você concluiu este desafio e ajudou o planeta — continue assim!",
-        style: "success",
-      };
-    } else {
-      messageBlock = {
-        title: "🌿 Não desanime",
-        desc: "O tempo passou, mas a natureza sempre dá novas chances. Continue cultivando bons hábitos!",
-        style: "encourage",
-      };
-    }
-  }
+  const isCompleted = completedMonths.includes(headerMonthIndex) && !isLocked;
 
   const isQuests = pathname?.toLowerCase().includes("quests");
   const isConquistas = pathname?.toLowerCase().includes("conquistas");
 
-  // título do cabeçalho: prioriza titleParam vindo do modal, senão usa titlesList
   const headerTitle = titleParam ?? titlesList[headerMonthIndex];
   const headerMonthFull = monthsFull[headerMonthIndex];
   const headerImage = imagesList[headerMonthIndex];
 
+  const progressPercent = Math.round((dailyProgress.completed / dailyProgress.total) * 100);
+
   return (
     <View style={styles.container}>
-      {/* fundo azul */}
+      {/* TOPO AZUL */}
       <View style={styles.headerContainer}>
         <View style={styles.tabButtonsContainer}>
           <View style={styles.tabContainer}>
@@ -130,23 +96,20 @@ export default function Quests() {
           </View>
         </View>
 
-        {/* cabeçalho dinâmico: título (nome da conquista) + mês + imagem */}
+        {/* cabeçalho com mês e imagem */}
         <View style={styles.questHeaderContainer}>
           <View style={styles.questRow}>
             <View style={styles.titleGroup}>
               <View style={styles.monthContainer}>
                 <Text style={styles.monthText}>{headerMonthFull}</Text>
               </View>
-
-              {/* mostra o nome da conquista (headerTitle) */}
               <Text style={styles.questTitleText}>{headerTitle}</Text>
             </View>
-
             <Image source={headerImage} style={styles.questImage} />
           </View>
         </View>
 
-        {/* bloco de estado / tempo */}
+        {/* QUADRADO PRETO */}
         <View style={styles.dailyQuestContainer}>
           <View style={styles.dailyHeader}>
             <Ionicons name="time-outline" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
@@ -157,45 +120,45 @@ export default function Quests() {
 
           <View style={styles.dailyQuestBox}>
             {isCurrent ? (
-              // mês atual — mostra barra e "Quests Diárias"
+              // ---------------- MÊS ATUAL ----------------
               <>
-                <Text style={styles.dailyQuestText}>Quests Diárias</Text>
+                <Text style={styles.dailyQuestText}>Complete 30 quests diárias</Text>
 
+                {/* mostra o 20 em azul e /30 em branco no canto */}
                 <Text style={styles.dailyQuestCompleted}>
-                  <Text style={{ color: "#1E90FF" }}>{dailyProgress.completed}</Text>
-                  <Text style={{ color: "#FFFFFF" }}>{`/${dailyProgress.total}`}</Text>
+                  <Text style={{ color: "#1E90FF", fontWeight: "900" }}>{dailyProgress.completed}</Text>
+                  <Text style={{ color: "#FFFFFF", fontWeight: "900" }}>{`/${dailyProgress.total}`}</Text>
                 </Text>
 
+                {/* BARRA DENTRO DO QUADRADO PRETO */}
                 <View style={styles.progressBar}>
-                  <View style={[styles.progressFill, { width: `${(dailyProgress.completed / dailyProgress.total) * 100}%` }]} />
+                  <View style={[styles.progressFill, { width: `${progressPercent}%` }]} />
                 </View>
               </>
-            ) : (
-              // não é mês atual — mostra "Completo" ou mensagem (sem lista de quests)
+            ) : isCompleted ? (
+              // ---------------- CONCLUÍDO ----------------
               <>
-                {isCompleted ? (
-                  <>
-                    <Text style={styles.completedText}>Completo</Text>
-                    <Text style={styles.completedCount}>30/30</Text>
-                  </>
-                ) : (
-                  <>
-                    {/* quando não é atual e não completou, ocultamos o "Quests Diárias" e mostramos a mensagem bonita */}
-                    <View style={styles.messageBox}>
-                      <Text style={[styles.messageTitle, messageBlock?.style === "future" && styles.futureColor, messageBlock?.style === "success" && styles.successColor, messageBlock?.style === "encourage" && styles.encourageColor]}>
-                        {messageBlock?.title}
-                      </Text>
-                      <Text style={styles.messageDesc}>{messageBlock?.desc}</Text>
-                    </View>
-                  </>
-                )}
+                <Text style={styles.completedText}>Completo</Text>
+                <Text style={styles.completedCount}>30/30</Text>
+              </>
+            ) : isFuture ? (
+              // ---------------- FUTURO (ainda vai vir) ----------------
+              <>
+                <Text style={styles.dailyQuestText}>Complete 30 quests diárias</Text>
+                <Text style={[styles.dailyQuestCompleted, { color: "#FFFFFF" }]}>0/0</Text>
+              </>
+            ) : (
+              // ---------------- PASSADO NÃO CONCLUÍDO ----------------
+              <>
+                <Text style={[styles.dailyQuestText, { color: "#FFFFFF" }]}>❌ Desafio não concluído</Text>
+                <Text style={[styles.dailyQuestCompleted, { color: "#FFFFFF" }]}>0/0</Text>
               </>
             )}
           </View>
         </View>
       </View>
 
-      {/* parte branca inferior */}
+      {/* PARTE BRANCA INFERIOR */}
       <ScrollView style={styles.bottomContainer} contentContainerStyle={{ paddingBottom: 40 }}>
         {isCurrent ? (
           <>
@@ -221,16 +184,36 @@ export default function Quests() {
             </View>
           </>
         ) : (
-          // se não for atual, mostramos apenas a mensagem (já mostrada no header box).
-          // Removemos o título "Quests Diárias" conforme pedido.
-          <View style={{ paddingHorizontal: 16 }}>
-            {/* repetimos a mensagem para ficar mais visível na área branca */}
-            <View style={styles.messageBox}>
-              <Text style={[styles.messageTitle, messageBlock?.style === "future" && styles.futureColor, messageBlock?.style === "success" && styles.successColor, messageBlock?.style === "encourage" && styles.encourageColor]}>
-                {messageBlock?.title}
-              </Text>
-              <Text style={styles.messageDesc}>{messageBlock?.desc}</Text>
-            </View>
+          <View style={{ paddingHorizontal: 16, alignItems: "center" }}>
+            {isPast && !isCompleted && !isLocked ? (
+              // PASSADO NÃO CONCLUÍDO: mostra incentivo completo na parte branca
+              <View style={styles.messageBox}>
+                <Text style={[styles.messageTitle, { color: "#E84545" }]}>🌿 Não desanime</Text>
+                <Text style={styles.messageDesc}>
+                  O tempo passou, mas a natureza sempre dá novas chances. Continue cultivando bons hábitos!
+                </Text>
+                {/* opcional: mostrar resumo do que faltou */}
+                <Text style={[styles.messageDesc, { marginTop: 8, fontWeight: "700" }]}>Desafio não concluído — 0/0</Text>
+              </View>
+            ) : isFuture ? (
+              // FUTURO: instrução e 0/0 na parte branca
+              <View style={styles.messageBox}>
+                <Text style={[styles.messageTitle, { color: "#1E90FF" }]}>🌱 Espere mais um pouco</Text>
+                <Text style={styles.messageDesc}>
+                  O próximo desafio está germinando — prepare-se para ajudar a natureza em breve!
+                </Text>
+                <Text style={[styles.messageDesc, { marginTop: 8, fontWeight: "700" }]}>Complete 30 quests diárias — 0/0</Text>
+              </View>
+            ) : isCompleted ? (
+              // CONCLUÍDO: mensagem de parabéns
+              <View style={styles.messageBox}>
+                <Text style={[styles.messageTitle, { color: "#2E8B57" }]}>🌎 Parabéns!</Text>
+                <Text style={styles.messageDesc}>
+                  Você concluiu este desafio e ajudou o planeta — continue assim!
+                </Text>
+                <Text style={[styles.messageDesc, { marginTop: 8, fontWeight: "700" }]}>30/30</Text>
+              </View>
+            ) : null}
           </View>
         )}
       </ScrollView>
@@ -258,39 +241,31 @@ const styles = StyleSheet.create({
   titleGroup: { justifyContent: "center", flex: 1 },
   monthContainer: { backgroundColor: "#FFFFFF", paddingVertical: 3, paddingHorizontal: 10, borderRadius: 8, alignSelf: "flex-start", marginBottom: 6 },
   monthText: { color: "#1E90FF", fontSize: 14, fontWeight: "900" },
-  questTitleText: { color: "#FFFFFF", fontSize: 28, fontWeight: "900", lineHeight: 34, letterSpacing: 1, textAlign: "left" },
-
+  questTitleText: { color: "#FFFFFF", fontSize: 28, fontWeight: "900", lineHeight: 34 },
   questImage: { width: 130, height: 130, borderRadius: 12, resizeMode: "contain", marginLeft: 12 },
 
   dailyQuestContainer: { marginTop: 10 },
   dailyHeader: { flexDirection: "row", alignItems: "center", marginBottom: 6 },
   daysText: { color: "#FFFFFF", fontSize: 15, fontWeight: "bold" },
-  dailyQuestBox: { backgroundColor: "rgba(0,0,0,0.25)", borderRadius: 10, padding: 14, width: "100%" },
+  dailyQuestBox: { backgroundColor: "rgba(0,0,0,0.25)", borderRadius: 10, padding: 14, width: "100%", minHeight: 64 },
 
-  // mês atual (barras)
-  dailyQuestText: { color: "#FFFFFF", fontSize: 15, fontWeight: "bold", marginBottom: 6 },
-  dailyQuestCompleted: { position: "absolute", right: 14, top: 16, fontSize: 15, fontWeight: "bold" },
+  dailyQuestText: { color: "#FFFFFF", fontSize: 15, fontWeight: "bold" },
+  dailyQuestCompleted: { position: "absolute", right: 14, top: 18, fontSize: 15, fontWeight: "900" },
 
-  progressBar: { height: 10, backgroundColor: "rgba(255,255,255,0.35)", borderRadius: 5, overflow: "hidden", marginTop: 10 },
+  progressBar: { height: 8, backgroundColor: "rgba(255,255,255,0.18)", borderRadius: 6, overflow: "hidden", marginTop: 12 },
   progressFill: { height: "100%", backgroundColor: "#1E90FF" },
 
-  // não atual - estado completo
   completedText: { color: "#FFFFFF", fontSize: 18, fontWeight: "bold" },
   completedCount: { position: "absolute", right: 14, top: 16, color: "#FFFFFF", fontSize: 15, fontWeight: "bold" },
 
   bottomContainer: { flex: 1, backgroundColor: "#FFFFFF", padding: 16 },
 
-  // mensagem estilizada para meses não atuais
-  messageBox: { backgroundColor: "#F3F9FF", padding: 18, borderRadius: 12, alignItems: "center", marginVertical: 10 },
+  messageBox: { backgroundColor: "#F3F9FF", padding: 18, borderRadius: 12, alignItems: "center", marginVertical: 20 },
   messageTitle: { fontSize: 20, fontWeight: "800", marginBottom: 8, textAlign: "center" },
   messageDesc: { fontSize: 15, color: "#375E8C", textAlign: "center" },
-  futureColor: { color: "#1E90FF" },
-  successColor: { color: "#2E8B57" },
-  encourageColor: { color: "#F39C12" },
 
   dailyTitle: { color: "#1E90FF", fontSize: 26, fontWeight: "900", marginBottom: 16 },
 
-  // quests diárias (lista)
   questsBox: { borderWidth: 2, borderColor: "rgba(30,144,255,0.4)", borderRadius: 16, padding: 16 },
   questProgressContainer: { marginBottom: 14 },
   textRow: { flexDirection: "row", alignItems: "center", marginBottom: 6 },

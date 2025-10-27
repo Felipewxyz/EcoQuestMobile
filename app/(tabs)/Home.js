@@ -1,20 +1,30 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import React, { useEffect, useRef, useState } from "react";
 import {
   Animated,
+  findNodeHandle,
   Image,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
+  UIManager,
   View,
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
 export default function Home() {
   const navigation = useNavigation();
+  const route = useRoute();
+
+  const sectionRefs = React.useRef([]); // armazena refs das seções
+  const scrollViewRef = React.useRef(null);
+
+  const tema1Ref = useRef(null);
+  const tema2Ref = useRef(null);
+  const tema3Ref = useRef(null);
 
   const animComum = useRef(new Animated.Value(0)).current;
   const animExtra = useRef(new Animated.Value(0)).current;
@@ -22,51 +32,61 @@ export default function Home() {
   const [progressoComum, setProgressoComum] = useState(0);
   const [progressoExtra, setProgressoExtra] = useState(0);
 
-  // --- Função para carregar o progresso de cada tipo ---
+  // Carregar progresso salvo
   const carregarProgresso = async () => {
     try {
       const valorComum = await AsyncStorage.getItem("progresso_pratica_comum");
       const valorExtra = await AsyncStorage.getItem("progresso_pratica_extra");
-
       const pComum = valorComum ? parseFloat(valorComum) : 0;
       const pExtra = valorExtra ? parseFloat(valorExtra) : 0;
 
       setProgressoComum(pComum);
       setProgressoExtra(pExtra);
 
-      // só anima se tiver progresso real (> 0)
-      if (pComum > 0) {
-        Animated.timing(animComum, {
-          toValue: pComum,
-          duration: 900,
-          useNativeDriver: false,
-        }).start();
-      } else {
-        animComum.setValue(0);
-      }
-
-      if (pExtra > 0) {
-        Animated.timing(animExtra, {
-          toValue: pExtra,
-          duration: 900,
-          useNativeDriver: false,
-        }).start();
-      } else {
-        animExtra.setValue(0);
-      }
+      animComum.setValue(pComum);
+      animExtra.setValue(pExtra);
     } catch (e) {
       console.log("Erro ao carregar progresso:", e);
     }
   };
 
-  // Atualiza sempre que voltar para a Home
+  // Scroll automático para o tema selecionado
   useFocusEffect(
     React.useCallback(() => {
       carregarProgresso();
-    }, [])
+
+      const scrollTo = route.params?.scrollTo;
+
+      if (scrollTo && scrollViewRef.current) {
+        setTimeout(() => {
+          let ref;
+          if (scrollTo === "tema1") ref = tema1Ref;
+          if (scrollTo === "tema2") ref = tema2Ref;
+          if (scrollTo === "tema3") ref = tema3Ref;
+
+          if (ref?.current) {
+            const nodeHandle = findNodeHandle(ref.current);
+            const scrollHandle = findNodeHandle(scrollViewRef.current) || scrollViewRef.current?.getInnerViewNode?.();
+
+            if (nodeHandle && scrollHandle) {
+              UIManager.measureLayout(
+                nodeHandle,
+                scrollHandle,
+                () => {
+                  /* error */
+                },
+                (x, y, width, height) => {
+                  scrollViewRef.current?.scrollTo({ y: y - 20, animated: true });
+                }
+              );
+            }
+          }
+        }, 400);
+      }
+    }, [route.params])
   );
 
-  // --- Componente de Barra Circular ---
+  // Barra circular
   const CircleProgress = ({ animatedValue, size = 90, strokeColor = "#019314" }) => {
     const strokeWidth = 6;
     const radius = (size - strokeWidth) / 2;
@@ -90,7 +110,6 @@ export default function Home() {
     return (
       <View style={[styles.circleContainer, { width: size, height: size }]}>
         <Svg width={size} height={size}>
-          {/* fundo cinza */}
           <Circle
             stroke="#C8C8C8"
             fill="none"
@@ -99,7 +118,6 @@ export default function Home() {
             r={radius}
             strokeWidth={strokeWidth}
           />
-          {/* barra da esquerda pra direita */}
           <AnimatedCircle
             stroke={strokeColor}
             fill="none"
@@ -114,7 +132,6 @@ export default function Home() {
           />
         </Svg>
 
-        {/* porcentagem central */}
         <View style={styles.iconInside}>
           <Text style={{ fontSize: 18, fontWeight: "bold", color: strokeColor }}>
             {percent}%
@@ -124,14 +141,27 @@ export default function Home() {
     );
   };
 
-  // --- Bloco de cada tema ---
-  const BlocoTema = ({ title, onPress, tipo }) => (
-    <>
-      {/* Caixa 1.1 e 2.1 */}
+  // Linha divisória
+  const LinhaDivisoria = () => (
+    <View
+      style={{
+        height: 1.5,
+        backgroundColor: "#019314",
+        opacity: 0.2,
+        marginVertical: 8,
+        borderRadius: 10,
+      }}
+    />
+  );
+
+  // Bloco de tema
+  const BlocoTema = ({ temaTitle, subtitulo, tipo, onPress, temaTitleStyle, innerRef }) => (
+    // collapsable={false} garante que a View exista como nó nativo para measureLayout
+    <View ref={innerRef} collapsable={false}>
       <View style={styles.themeBox}>
         <View style={styles.themeTextContainer}>
-          <Text style={styles.themeTitle}>TEMA 01</Text>
-          <Text style={styles.themeSubtitle}>{title}</Text>
+          <Text style={[styles.themeTitle, temaTitleStyle]}>{temaTitle}</Text>
+          <Text style={styles.themeSubtitle}>{subtitulo}</Text>
         </View>
         <View style={styles.divider} />
         <Pressable onPress={() => navigation.navigate("Temas")}>
@@ -139,7 +169,6 @@ export default function Home() {
         </Pressable>
       </View>
 
-      {/* Caixa 1.2 e 2.2 */}
       <View style={styles.greenBox}>
         <View style={styles.iconGrid}>
           {[0, 1, 2, 3].map((i) => (
@@ -153,13 +182,16 @@ export default function Home() {
           ))}
         </View>
       </View>
-    </>
+    </View>
   );
 
-  // --- Renderização principal ---
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
-      {/* Roda-teto */}
+    <ScrollView
+      ref={scrollViewRef}
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 60 }}
+    >
+      {/* Topo */}
       <View style={styles.topIcons}>
         <View style={styles.iconItem}>
           <Image source={require("../../assets/images/gota.png")} style={styles.icon} />
@@ -175,27 +207,71 @@ export default function Home() {
         </View>
       </View>
 
-      {/* Caixa 1 - Práticas Comuns */}
+      {/* TEMA 1 - Prática Comum */}
       <BlocoTema
-        title="Práticas Comuns"
-        onPress={() => navigation.navigate("PraticaComum")}
+        innerRef={tema1Ref}
+        temaTitle="O Poder do Consumo Invisível"
+        subtitulo="Tema 1 - Práticas Comuns"
         tipo="comum"
+        onPress={() => navigation.navigate("PraticaComum")}
+        temaTitleStyle={{ fontSize: 16 }}
       />
 
-      {/* Caixa 2 - Práticas Extras */}
+      {/* TEMA 1 - Prática Extra */}
       <BlocoTema
-        title="Práticas Extras"
-        onPress={() => navigation.navigate("PraticaExtra")}
+        temaTitle="O Poder do Consumo Invisível"
+        subtitulo="Tema 1 - Práticas Extras"
         tipo="extra"
+        onPress={() => navigation.navigate("PraticaExtra")}
+        temaTitleStyle={{ fontSize: 16 }}
       />
 
-      {/* Roda-pé */}
-      <View style={{ height: 30 }} />
+      {/* Divisor entre TEMA 1 e TEMA 2 */}
+      <LinhaDivisoria />
+
+      {/* TEMA 2 - Prática Comum */}
+      <BlocoTema
+        innerRef={tema2Ref}
+        temaTitle="A Água que Você Não Vê"
+        subtitulo="Tema 2 - Práticas Comuns"
+        tipo="comum"
+        onPress={() => navigation.navigate("PraticaComum")}
+        temaTitleStyle={{ fontSize: 16 }}
+      />
+
+      {/* TEMA 2 - Prática Extra */}
+      <BlocoTema
+        temaTitle="A Água que Você Não Vê"
+        subtitulo="Tema 2 - Práticas Extras"
+        tipo="extra"
+        onPress={() => navigation.navigate("PraticaExtra")}
+        temaTitleStyle={{ fontSize: 16 }}
+      />
+
+      <LinhaDivisoria />
+
+      {/* TEMA 3 */}
+      <BlocoTema
+        innerRef={tema3Ref}
+        temaTitle="A Natureza Dentro de Casa"
+        subtitulo="Tema 3 - Práticas Comuns"
+        tipo="comum"
+        onPress={() => navigation.navigate("PraticaComum")}
+        temaTitleStyle={{ fontSize: 16 }}
+      />
+      <BlocoTema
+        temaTitle="A Natureza Dentro de Casa"
+        subtitulo="Tema 3 - Práticas Extras"
+        tipo="extra"
+        onPress={() => navigation.navigate("PraticaExtra")}
+        temaTitleStyle={{ fontSize: 16 }}
+      />
+
+      <View style={{ height: 40 }} />
     </ScrollView>
   );
 }
 
-// --- Estilos ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
