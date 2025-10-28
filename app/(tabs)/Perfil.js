@@ -1,19 +1,22 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router"; // ✅ Importa o hook de navegação do Expo Router
-import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useRouter } from "expo-router";
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 
 export default function Perfil() {
-  const router = useRouter(); // ✅ Instância para navegação
+  const router = useRouter();
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Ícone de engrenagem */}
-      <TouchableOpacity
-        style={styles.configIcon}
-        onPress={() => router.push("/tabs/Configuracoes")}
+      {/* Ícone de engrenagem com efeito de toque */}
+      <Pressable
+        style={({ pressed }) => [
+          styles.configIcon,
+          pressed && { transform: [{ scale: 0.9 }], opacity: 0.7 }, // efeito suave
+        ]}
+        onPress={() => router.push("/(tabs)/Configuracoes")}
       >
         <Ionicons name="settings-outline" size={38} color="#000" />
-      </TouchableOpacity>
+      </Pressable>
 
       {/* Banner verde claro */}
       <View style={styles.banner}></View>
@@ -140,6 +143,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "600",
   },
+
+  /* ✅ Novo botão Home */
+  buttonContainer: {
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 20,
+  },
+  homeButton: {
+    backgroundColor: "#7BC47F",
+    paddingVertical: 12,
+    paddingHorizontal: 30,
+    borderRadius: 25,
+  },
+  homeButtonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+
   whiteSection: {
     backgroundColor: "#FFFFFF",
     alignItems: "center",
