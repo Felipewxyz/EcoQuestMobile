@@ -19,12 +19,11 @@ export default function Home() {
   const navigation = useNavigation();
   const route = useRoute();
 
-  const sectionRefs = React.useRef([]); // armazena refs das seções
-  const scrollViewRef = React.useRef(null);
-
   const tema1Ref = useRef(null);
   const tema2Ref = useRef(null);
   const tema3Ref = useRef(null);
+
+  const scrollViewRef = useRef(null);
 
   const animComum = useRef(new Animated.Value(0)).current;
   const animExtra = useRef(new Animated.Value(0)).current;
@@ -66,15 +65,15 @@ export default function Home() {
 
           if (ref?.current) {
             const nodeHandle = findNodeHandle(ref.current);
-            const scrollHandle = findNodeHandle(scrollViewRef.current) || scrollViewRef.current?.getInnerViewNode?.();
+            const scrollHandle =
+              findNodeHandle(scrollViewRef.current) ||
+              scrollViewRef.current?.getInnerViewNode?.();
 
             if (nodeHandle && scrollHandle) {
               UIManager.measureLayout(
                 nodeHandle,
                 scrollHandle,
-                () => {
-                  /* error */
-                },
+                () => { },
                 (x, y, width, height) => {
                   scrollViewRef.current?.scrollTo({ y: y - 20, animated: true });
                 }
@@ -87,8 +86,9 @@ export default function Home() {
   );
 
   // Barra circular
-  const CircleProgress = ({ animatedValue, size = 90, strokeColor = "#019314" }) => {
-    const strokeWidth = 6;
+  // Barra circular
+  const CircleProgress = ({ animatedValue, size = 160, strokeColor = "#019314" }) => {
+    const strokeWidth = 10; // 🔹 Aumentei a espessura
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
     const [percent, setPercent] = useState(0);
@@ -133,7 +133,7 @@ export default function Home() {
         </Svg>
 
         <View style={styles.iconInside}>
-          <Text style={{ fontSize: 18, fontWeight: "bold", color: strokeColor }}>
+          <Text style={{ fontSize: 22, fontWeight: "bold", color: strokeColor }}>
             {percent}%
           </Text>
         </View>
@@ -156,7 +156,6 @@ export default function Home() {
 
   // Bloco de tema
   const BlocoTema = ({ temaTitle, subtitulo, tipo, onPress, temaTitleStyle, innerRef }) => (
-    // collapsable={false} garante que a View exista como nó nativo para measureLayout
     <View ref={innerRef} collapsable={false}>
       <View style={styles.themeBox}>
         <View style={styles.themeTextContainer}>
@@ -170,16 +169,12 @@ export default function Home() {
       </View>
 
       <View style={styles.greenBox}>
-        <View style={styles.iconGrid}>
-          {[0, 1, 2, 3].map((i) => (
-            <View key={i} style={styles.circleItem}>
-              <Pressable onPress={onPress}>
-                <CircleProgress
-                  animatedValue={tipo === "extra" ? animExtra : animComum}
-                />
-              </Pressable>
-            </View>
-          ))}
+        <View style={styles.singleCircleContainer}>
+          <Pressable onPress={onPress}>
+            <CircleProgress
+              animatedValue={tipo === "extra" ? animExtra : animComum}
+            />
+          </Pressable>
         </View>
       </View>
     </View>
@@ -207,7 +202,7 @@ export default function Home() {
         </View>
       </View>
 
-      {/* TEMA 1 - Prática Comum */}
+      {/* TEMA 1 */}
       <BlocoTema
         innerRef={tema1Ref}
         temaTitle="O Poder do Consumo Invisível"
@@ -216,8 +211,6 @@ export default function Home() {
         onPress={() => navigation.navigate("PraticaComum")}
         temaTitleStyle={{ fontSize: 16 }}
       />
-
-      {/* TEMA 1 - Prática Extra */}
       <BlocoTema
         temaTitle="O Poder do Consumo Invisível"
         subtitulo="Tema 1 - Práticas Extras"
@@ -226,10 +219,9 @@ export default function Home() {
         temaTitleStyle={{ fontSize: 16 }}
       />
 
-      {/* Divisor entre TEMA 1 e TEMA 2 */}
       <LinhaDivisoria />
 
-      {/* TEMA 2 - Prática Comum */}
+      {/* TEMA 2 */}
       <BlocoTema
         innerRef={tema2Ref}
         temaTitle="A Água que Você Não Vê"
@@ -238,8 +230,6 @@ export default function Home() {
         onPress={() => navigation.navigate("PraticaComum")}
         temaTitleStyle={{ fontSize: 16 }}
       />
-
-      {/* TEMA 2 - Prática Extra */}
       <BlocoTema
         temaTitle="A Água que Você Não Vê"
         subtitulo="Tema 2 - Práticas Extras"
@@ -322,17 +312,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     alignItems: "center",
   },
-  iconGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  circleItem: {
-    width: "50%",
+  singleCircleContainer: {
     alignItems: "center",
     justifyContent: "center",
-    marginVertical: 10,
+    paddingVertical: 25,
   },
   circleContainer: {
     alignItems: "center",

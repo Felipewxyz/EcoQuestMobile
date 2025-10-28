@@ -17,7 +17,6 @@ import {
   findNodeHandle,
 } from "react-native";
 
-
 const BlocoPraticaComum = React.forwardRef(({ titulo, subtitulo, storageKey }, ref) => {
   const navigation = useNavigation();
   const [concluida, setConcluida] = useState(false);
@@ -90,7 +89,7 @@ const BlocoPraticaComum = React.forwardRef(({ titulo, subtitulo, storageKey }, r
 
   return (
     <View ref={ref} style={{ marginBottom: 40 }}>
-      {/* ===== CAIXA 1 ===== */}
+      {/* ===== CABEÇALHO ===== */}
       <View style={styles.topoLinha}>
         <TouchableOpacity
           style={styles.botaoVoltar}
@@ -115,13 +114,13 @@ const BlocoPraticaComum = React.forwardRef(({ titulo, subtitulo, storageKey }, r
         </View>
       </View>
 
-      {/* ===== CAIXA VERDE ===== */}
+      {/* ===== CONTEÚDO ===== */}
       <View style={styles.caixaVerde}>
         <Text style={styles.tituloVerde}>
           APRENDA COMO SEPARAR O SEU LIXO DE PLÁSTICO
         </Text>
 
-        {/* ===== CAIXA 2 (instruções) ===== */}
+        {/* ===== INSTRUÇÕES ===== */}
         <View style={styles.caixaBranca}>
           <Text style={styles.textoBrancoCaixa2}>
             <Text style={styles.negrito}>1 - Limpeza{"\n"}</Text>
@@ -135,12 +134,14 @@ const BlocoPraticaComum = React.forwardRef(({ titulo, subtitulo, storageKey }, r
 
         <Text style={styles.tituloProgresso}>SEU PROGRESSO</Text>
 
-        {/* ===== CAIXA 3 ===== */}
+        {/* ===== UPLOAD DAS IMAGENS ===== */}
         <View style={styles.caixaBranca}>
           {["limpeza", "secagem", "separacao"].map((topico) => (
             <View key={topico}>
               <Text style={styles.topico}>
-                <Text style={styles.negrito}>{topico.charAt(0).toUpperCase() + topico.slice(1)}</Text>
+                <Text style={styles.negrito}>
+                  {topico.charAt(0).toUpperCase() + topico.slice(1)}
+                </Text>
               </Text>
 
               <ScrollView
@@ -172,7 +173,7 @@ const BlocoPraticaComum = React.forwardRef(({ titulo, subtitulo, storageKey }, r
         </View>
       </View>
 
-      {/* modal de opções */}
+      {/* ===== MODAIS ===== */}
       <Modal
         visible={!!opcoesVisiveis}
         transparent
@@ -218,7 +219,9 @@ const BlocoPraticaComum = React.forwardRef(({ titulo, subtitulo, storageKey }, r
               }}
             >
               <Ionicons name="trash" size={22} color="#E53935" />
-              <Text style={[styles.textoBotaoModal, { color: "#E53935" }]}>Excluir imagem</Text>
+              <Text style={[styles.textoBotaoModal, { color: "#E53935" }]}>
+                Excluir imagem
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -231,7 +234,6 @@ const BlocoPraticaComum = React.forwardRef(({ titulo, subtitulo, storageKey }, r
         </View>
       </Modal>
 
-      {/* modal para visualizar imagem ampliada */}
       <Modal
         visible={!!imagemSelecionada}
         transparent
@@ -239,10 +241,16 @@ const BlocoPraticaComum = React.forwardRef(({ titulo, subtitulo, storageKey }, r
         onRequestClose={() => setImagemSelecionada(null)}
       >
         <View style={styles.modalFundo}>
-          <Pressable style={StyleSheet.absoluteFill} onPress={() => setImagemSelecionada(null)} />
+          <Pressable
+            style={StyleSheet.absoluteFill}
+            onPress={() => setImagemSelecionada(null)}
+          />
           <View style={styles.modalConteudo}>
             <Image source={{ uri: imagemSelecionada }} style={styles.imagemAmpliada} />
-            <TouchableOpacity style={styles.botaoFechar} onPress={() => setImagemSelecionada(null)}>
+            <TouchableOpacity
+              style={styles.botaoFechar}
+              onPress={() => setImagemSelecionada(null)}
+            >
               <Ionicons name="close" size={26} color="#FFF" />
             </TouchableOpacity>
           </View>
@@ -254,7 +262,7 @@ const BlocoPraticaComum = React.forwardRef(({ titulo, subtitulo, storageKey }, r
 
 export default function PraticaComum() {
   const scrollRef = useRef(null);
-  const blocosRefs = [useRef(null), useRef(null), useRef(null), useRef(null)];
+  const blocosRefs = [useRef(null), useRef(null), useRef(null)];
   const route = useRoute();
 
   useFocusEffect(
@@ -284,11 +292,14 @@ export default function PraticaComum() {
   );
 
   return (
-    <ScrollView ref={scrollRef} style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
+    <ScrollView
+      ref={scrollRef}
+      style={styles.container}
+      contentContainerStyle={{ paddingBottom: 60 }}
+    >
       <BlocoPraticaComum ref={blocosRefs[0]} titulo="Prática 1" subtitulo="Tema 01" storageKey="pratica_1" />
       <BlocoPraticaComum ref={blocosRefs[1]} titulo="Prática 2" subtitulo="Tema 02" storageKey="pratica_2" />
       <BlocoPraticaComum ref={blocosRefs[2]} titulo="Prática 3" subtitulo="Tema 03" storageKey="pratica_3" />
-      <BlocoPraticaComum ref={blocosRefs[3]} titulo="Prática 4" subtitulo="Tema 04" storageKey="pratica_4" />
     </ScrollView>
   );
 }
