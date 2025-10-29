@@ -15,19 +15,19 @@ export default function Temas() {
   const temas = [
     {
       id: 1,
-      nome: "O Poder do Consumo Invisível ♻️",
+      nome: "O Poder do Consumo Invisível",
       descricao:
         "Nem tudo o que impacta o planeta é visível. Nossas ações digitais — assistir vídeos, enviar e-mails, usar redes sociais — consomem energia real e geram emissões de carbono. Entenda como pequenas mudanças no seu uso da tecnologia podem reduzir o impacto ambiental do mundo digital.",
     },
     {
       id: 2,
-      nome: "A Água que Você Não Vê 💧",
+      nome: "A Água que Você Não Vê",
       descricao:
         "Cuidar da água vai além de fechar a torneira. Cada produto que usamos, cada alimento que escolhemos, carrega uma pegada hídrica invisível. Descubra como suas decisões diárias podem economizar milhares de litros de água e ajudar o planeta de verdade.",
     },
     {
       id: 3,
-      nome: "A Natureza Dentro de Casa 🌿",
+      nome: "A Natureza Dentro de Casa",
       descricao:
         "Sustentabilidade também começa no lar. Trazer a natureza para perto — cultivando plantas, usando luz natural ou reaproveitando materiais — melhora o bem-estar e fortalece nossa conexão com o meio ambiente. Pequenas atitudes que transformam o seu espaço e o planeta.",
     },
@@ -51,8 +51,10 @@ export default function Temas() {
   }, []);
 
   const irParaTema = (id) => {
-    navigation.navigate("Home", { scrollTo: `tema${id}` });
+    navigation.navigate("Home", { scrollTo: id - 1, bloco: "comum" });
   };
+
+
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -64,7 +66,7 @@ export default function Temas() {
       >
         <Text style={styles.title}>
           Selecione um tema para aprender como viver de forma mais conectada e
-          respeitosa com o meio ambiente 🌎
+          respeitosa com o meio ambiente
         </Text>
 
         {temas.map((tema) => (
@@ -81,6 +83,7 @@ export default function Temas() {
             >
               <Text style={styles.buttonText}>Acessar Tema {tema.id}</Text>
             </Pressable>
+
           </View>
         ))}
       </Animated.View>

@@ -30,18 +30,26 @@ const BlocoPraticaComum = React.forwardRef(({ titulo, subtitulo, storageKey }, r
 
   const atualizarProgresso = async (novoEstado) => {
     try {
-      // Progresso por tópicos
-      const topicos = ["limpeza", "secagem", "separacao"];
       let progresso = 0;
-      if (novoEstado.limpeza.some((img) => img !== null)) progresso += 0.33;
-      if (novoEstado.secagem.some((img) => img !== null)) progresso += 0.33;
-      if (novoEstado.separacao.some((img) => img !== null)) progresso += 0.34;
+
+      const topicosPreenchidos = [
+        novoEstado.limpeza.some((img) => img !== null),
+        novoEstado.secagem.some((img) => img !== null),
+        novoEstado.separacao.some((img) => img !== null),
+      ];
+
+      const totalPreenchidos = topicosPreenchidos.filter(Boolean).length;
+
+      // Cada tópico vale 1/3 do progresso total
+      progresso = totalPreenchidos / 3;
 
       await AsyncStorage.setItem(storageKey, progresso.toString());
+      console.log(`✅ Progresso salvo para ${storageKey}: ${progresso * 100}%`);
     } catch (e) {
       console.log("Erro ao salvar progresso:", e);
     }
   };
+
 
   const escolherImagem = async (topico, index) => {
     try {
@@ -281,7 +289,7 @@ export default function PraticaComum() {
           UIManager.measureLayout(
             nodeHandle,
             scrollHandle,
-            () => {},
+            () => { },
             (x, y) => {
               scrollRef.current.scrollTo({ y: y - 20, animated: true });
             }
@@ -297,9 +305,9 @@ export default function PraticaComum() {
       style={styles.container}
       contentContainerStyle={{ paddingBottom: 60 }}
     >
-      <BlocoPraticaComum ref={blocosRefs[0]} titulo="Prática 1" subtitulo="Tema 01" storageKey="progresso_pratica_comum" />
-      <BlocoPraticaComum ref={blocosRefs[1]} titulo="Prática 2" subtitulo="Tema 02" storageKey="progresso_pratica_comum" />
-      <BlocoPraticaComum ref={blocosRefs[2]} titulo="Prática 3" subtitulo="Tema 03" storageKey="progresso_pratica_comum" />
+      <BlocoPraticaComum ref={blocosRefs[0]} titulo="Prática 1" subtitulo="Tema 01" storageKey="pratica1" />
+      <BlocoPraticaComum ref={blocosRefs[1]} titulo="Prática 2" subtitulo="Tema 02" storageKey="pratica2" />
+      <BlocoPraticaComum ref={blocosRefs[2]} titulo="Prática 3" subtitulo="Tema 03" storageKey="pratica3" />
     </ScrollView>
   );
 }
@@ -346,233 +354,3 @@ const styles = StyleSheet.create({
   botaoFechar: { position: "absolute", top: 10, right: 10, padding: 10 },
 });
 
-//CODIGO QUE ESTA FUNCIONANDO A BAIXO 
-// import { Ionicons } from "@expo/vector-icons";
-// import AsyncStorage from "@react-native-async-storage/async-storage";
-// import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
-// import * as ImagePicker from "expo-image-picker";
-// import React, { useRef, useState, useEffect } from "react";
-// import { Alert, Image, Modal, Pressable, ScrollView, StyleSheet, Text, TouchableOpacity, UIManager, View, findNodeHandle } from "react-native";
-
-// const BlocoPraticaComum = React.forwardRef(({ titulo, subtitulo, storageKey, onProgressoAtualizado }, ref) => {
-//   const navigation = useNavigation();
-//   const [imagemSelecionada, setImagemSelecionada] = useState(null);
-//   const [opcoesVisiveis, setOpcoesVisiveis] = useState(null);
-//   const [imagensUsuario, setImagensUsuario] = useState([null, null, null]); // Limpeza, Secagem, Separacao
-
-//   // Atualiza progresso no AsyncStorage e notifica o Home
-//   const atualizarProgresso = async (novoEstado) => {
-//     try {
-//       let progresso = novoEstado.filter(img => img !== null).length / 3;
-//       await AsyncStorage.setItem(storageKey, progresso.toString());
-//       if (onProgressoAtualizado) onProgressoAtualizado(progresso);
-//     } catch (e) {
-//       console.log("Erro ao salvar progresso:", e);
-//     }
-//   };
-
-//   const escolherImagem = async (index) => {
-//     try {
-//       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-//       if (status !== "granted") {
-//         Alert.alert("Permissão necessária", "Autorize o acesso à galeria.");
-//         return;
-//       }
-//       const result = await ImagePicker.launchImageLibraryAsync({
-//         allowsEditing: true,
-//         aspect: [1, 1],
-//         quality: 1,
-//       });
-
-//       if (!result.canceled && result.assets?.length > 0) {
-//         const novaImagem = result.assets[0].uri;
-//         setImagensUsuario(prev => {
-//           const novoEstado = prev.map((img, i) => (i === index ? novaImagem : img));
-//           atualizarProgresso(novoEstado);
-//           return novoEstado;
-//         });
-//       }
-//     } catch (error) {
-//       console.log("Erro ao escolher imagem:", error);
-//       Alert.alert("Erro", "Não foi possível selecionar a imagem.");
-//     }
-//   };
-
-//   const excluirImagem = (index) => {
-//     setImagensUsuario(prev => {
-//       const novoEstado = prev.map((img, i) => (i === index ? null : img));
-//       atualizarProgresso(novoEstado);
-//       return novoEstado;
-//     });
-//     setOpcoesVisiveis(null);
-//   };
-
-//   const abrirOpcoesImagem = (img, index) => setOpcoesVisiveis({ img, index });
-
-//   return (
-//     <View ref={ref} style={{ marginBottom: 40 }}>
-//       <View style={styles.topoLinha}>
-//         <TouchableOpacity style={styles.botaoVoltar} onPress={() => navigation.navigate("Home")}>
-//           <Ionicons name="arrow-back" size={26} color="black" />
-//         </TouchableOpacity>
-
-//         <View style={styles.caixa1}>
-//           <View style={styles.textosCaixa1}>
-//             <Text style={styles.textoSuperior}>{titulo}</Text>
-//             <Text style={styles.textoInferior}>{subtitulo}</Text>
-//           </View>
-//         </View>
-//       </View>
-
-//       <View style={styles.caixaVerde}>
-//         <Text style={styles.tituloVerde}>SEU PROGRESSO</Text>
-//         <View style={styles.caixaBranca}>
-//           {["Limpeza", "Secagem", "Separacao"].map((topico, index) => (
-//             <View key={index}>
-//               <Text style={styles.topico}><Text style={styles.negrito}>{topico}</Text></Text>
-//               <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.scrollHorizontal}>
-//                 <TouchableOpacity
-//                   onPress={() =>
-//                     imagensUsuario[index] ? abrirOpcoesImagem(imagensUsuario[index], index) : escolherImagem(index)
-//                   }
-//                 >
-//                   {imagensUsuario[index] ? (
-//                     <Image source={{ uri: imagensUsuario[index] }} style={styles.quadradoImagem} />
-//                   ) : (
-//                     <View style={styles.quadradoCinza}>
-//                       <Ionicons name="add" size={36} color="#777" />
-//                     </View>
-//                   )}
-//                 </TouchableOpacity>
-//               </ScrollView>
-//             </View>
-//           ))}
-//         </View>
-//       </View>
-
-//       {/* MODAIS */}
-//       <Modal visible={!!opcoesVisiveis} transparent animationType="fade" onRequestClose={() => setOpcoesVisiveis(null)}>
-//         <View style={styles.modalFundo}>
-//           <View style={styles.modalCaixaOpcoes}>
-//             <Text style={styles.modalTitulo}>Escolha uma opção</Text>
-
-//             <TouchableOpacity
-//               style={styles.botaoModal}
-//               onPress={() => {
-//                 if (opcoesVisiveis) {
-//                   setImagemSelecionada(opcoesVisiveis.img);
-//                   setOpcoesVisiveis(null);
-//                 }
-//               }}
-//             >
-//               <Ionicons name="eye" size={22} color="#4CAF50" />
-//               <Text style={styles.textoBotaoModal}>Ver imagem</Text>
-//             </TouchableOpacity>
-
-//             <TouchableOpacity
-//               style={styles.botaoModal}
-//               onPress={() => {
-//                 if (opcoesVisiveis) {
-//                   escolherImagem(opcoesVisiveis.index);
-//                   setOpcoesVisiveis(null);
-//                 }
-//               }}
-//             >
-//               <Ionicons name="refresh" size={22} color="#4CAF50" />
-//               <Text style={styles.textoBotaoModal}>Trocar imagem</Text>
-//             </TouchableOpacity>
-
-//             <TouchableOpacity
-//               style={[styles.botaoModal, { backgroundColor: "#FCE4EC" }]}
-//               onPress={() => {
-//                 if (opcoesVisiveis) excluirImagem(opcoesVisiveis.index);
-//               }}
-//             >
-//               <Ionicons name="trash" size={22} color="#E53935" />
-//               <Text style={[styles.textoBotaoModal, { color: "#E53935" }]}>Excluir imagem</Text>
-//             </TouchableOpacity>
-
-//             <TouchableOpacity style={styles.botaoCancelar} onPress={() => setOpcoesVisiveis(null)}>
-//               <Text style={styles.textoCancelar}>Cancelar</Text>
-//             </TouchableOpacity>
-//           </View>
-//         </View>
-//       </Modal>
-
-//       <Modal visible={!!imagemSelecionada} transparent animationType="fade" onRequestClose={() => setImagemSelecionada(null)}>
-//         <View style={styles.modalFundo}>
-//           <Pressable style={StyleSheet.absoluteFill} onPress={() => setImagemSelecionada(null)} />
-//           <View style={styles.modalConteudo}>
-//             <Image source={{ uri: imagemSelecionada }} style={styles.imagemAmpliada} />
-//             <TouchableOpacity style={styles.botaoFechar} onPress={() => setImagemSelecionada(null)}>
-//               <Ionicons name="close" size={26} color="#FFF" />
-//             </TouchableOpacity>
-//           </View>
-//         </View>
-//       </Modal>
-//     </View>
-//   );
-// });
-
-// export default function PraticaComum() {
-//   const scrollRef = useRef(null);
-//   const blocosRefs = [useRef(null), useRef(null), useRef(null)];
-//   const route = useRoute();
-
-//   const [progressoTemas, setProgressoTemas] = useState([0, 0, 0]);
-
-//   return (
-//     <ScrollView ref={scrollRef} style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
-//       <BlocoPraticaComum
-//         ref={blocosRefs[0]}
-//         titulo="Prática 1"
-//         subtitulo="Tema 1"
-//         storageKey="pratica1"
-//         onProgressoAtualizado={(p) => setProgressoTemas(prev => { const copia = [...prev]; copia[0] = p; return copia; })}
-//       />
-//       <BlocoPraticaComum
-//         ref={blocosRefs[1]}
-//         titulo="Prática 2"
-//         subtitulo="Tema 2"
-//         storageKey="pratica2"
-//         onProgressoAtualizado={(p) => setProgressoTemas(prev => { const copia = [...prev]; copia[1] = p; return copia; })}
-//       />
-//       <BlocoPraticaComum
-//         ref={blocosRefs[2]}
-//         titulo="Prática 3"
-//         subtitulo="Tema 3"
-//         storageKey="pratica3"
-//         onProgressoAtualizado={(p) => setProgressoTemas(prev => { const copia = [...prev]; copia[2] = p; return copia; })}
-//       />
-//     </ScrollView>
-//   );
-// }
-
-// const styles = StyleSheet.create({
-//   container: { flex: 1, backgroundColor: "#FFFFFF", padding: 15 },
-//   topoLinha: { flexDirection: "row", alignItems: "center", marginBottom: 25 },
-//   botaoVoltar: { marginRight: 10, padding: 10 },
-//   caixa1: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", flex: 1, backgroundColor: "#FFF", borderColor: "#4CAF50", borderWidth: 2, borderRadius: 12, paddingVertical: 10, paddingHorizontal: 15 },
-//   textosCaixa1: { flex: 1, marginHorizontal: 10 },
-//   textoSuperior: { fontSize: 20, fontWeight: "bold", color: "#4CAF50" },
-//   textoInferior: { fontSize: 17, color: "#333" },
-//   caixaVerde: { backgroundColor: "#4CAF50", borderRadius: 12, padding: 20 },
-//   tituloVerde: { color: "#FFF", fontSize: 20, fontWeight: "bold", textAlign: "center", marginBottom: 15 },
-//   caixaBranca: { backgroundColor: "#FFF", borderRadius: 12, padding: 15, marginBottom: 20 },
-//   textoBrancoCaixa2: { fontSize: 16, color: "#333", lineHeight: 24 },
-//   negrito: { fontWeight: "bold", color: "#333" },
-//   topico: { fontSize: 16, color: "#333", marginBottom: 8 },
-//   scrollHorizontal: { marginBottom: 15 },
-//   quadradoCinza: { width: 120, height: 120, borderRadius: 10, backgroundColor: "#EEE", marginRight: 10, justifyContent: "center", alignItems: "center" },
-//   quadradoImagem: { width: 120, height: 120, borderRadius: 10, marginRight: 10 },
-//   modalFundo: { flex: 1, backgroundColor: "rgba(0,0,0,0.85)", justifyContent: "center", alignItems: "center" },
-//   modalCaixaOpcoes: { backgroundColor: "#FFF", width: 280, borderRadius: 16, padding: 20, alignItems: "center" },
-//   modalTitulo: { fontSize: 18, fontWeight: "bold", color: "#333", marginBottom: 15 },
-//   botaoModal: { flexDirection: "row", alignItems: "center", backgroundColor: "#E8F5E9", paddingVertical: 10, paddingHorizontal: 15, borderRadius: 10, width: "100%", marginBottom: 10 },
-//   textoBotaoModal: { fontSize: 16, color: "#333", marginLeft: 10, fontWeight: "500" },
-//   botaoCancelar: { marginTop: 5 },
-//   textoCancelar: { color: "#888", fontSize: 15 },
-//   modalConteudo: { justifyContent: "center", alignItems: "center" },
-//   imagemAmpliada: { width: 340, height: 340, borderRadius: 12, backgroundColor: "#DDD", resizeMode: "contain" },
-//   botaoFechar: { position: "absolute", top: 10, right: 10, padding: 10 },
-// });

@@ -2,7 +2,18 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import React, { useEffect, useRef, useState } from "react";
-import { Animated, findNodeHandle, Image, Pressable, ScrollView, StyleSheet, Text, UIManager, View } from "react-native";
+import {
+  Animated,
+  findNodeHandle,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  UIManager,
+  View,
+  InteractionManager,
+} from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
 export default function Home() {
@@ -18,94 +29,123 @@ export default function Home() {
 
   const scrollViewRef = useRef(null);
 
-  const animValues = [
-    useRef(new Animated.Value(0)).current,
-    useRef(new Animated.Value(0)).current,
-    useRef(new Animated.Value(0)).current,
-  ];
+  // progresso separado por tipo
+  const [progresso, setProgresso] = useState({
+    comum: [0, 0, 0],
+    extra: [0, 0, 0],
+  });
 
-  const [progresso, setProgresso] = useState([0, 0, 0]);
+  // animValues separados por tipo e tema
+  const animValues = useRef({
+    comum: [new Animated.Value(0), new Animated.Value(0), new Animated.Value(0)],
+    extra: [new Animated.Value(0), new Animated.Value(0), new Animated.Value(0)],
+  }).current;
 
-  const carregarProgresso = async () => {
-    try {
-      const novos = await Promise.all(
-        ["pratica1", "pratica2", "pratica3"].map(async (k) => {
-          const v = await AsyncStorage.getItem(k);
-          return v ? parseFloat(v) : 0;
-        })
-      );
-      setProgresso(novos);
-      novos.forEach((p, i) => animValues[i].setValue(p > 1 ? p / 100 : p));
-    } catch (e) {
-      console.log("Erro carregar progresso:", e);
-    }
-  };
+  // ================= Carregar progresso =================
+  useFocusEffect(
+    React.useCallback(() => {
+      const carregarProgresso = async () => {
+        try {
+          const chavesComum = ["pratica1", "pratica2", "pratica3"];
+          const valoresComum = await Promise.all(
+            chavesComum.map(async (key) => {
+              const value = await AsyncStorage.getItem(key);
+              return value ? parseFloat(value) : 0;
+            })
+          );
 
+          const chavesExtra = ["extra1", "extra2", "extra3"];
+          const valoresExtra = await Promise.all(
+            chavesExtra.map(async (key) => {
+              const value = await AsyncStorage.getItem(key);
+              return value ? parseFloat(value) : 0;
+            })
+          );
 
-  // 🚀 Recarrega sempre que a tela Home volta ao foco
+          setProgresso({ comum: valoresComum, extra: valoresExtra });
+
+          // animar cada barra individualmente
+          valoresComum.forEach((p, i) => {
+            Animated.timing(animValues.comum[i], {
+              toValue: p > 1 ? p / 100 : p,
+              duration: 800,
+              useNativeDriver: true,
+            }).start();
+          });
+
+          valoresExtra.forEach((p, i) => {
+            Animated.timing(animValues.extra[i], {
+              toValue: p > 1 ? p / 100 : p,
+              duration: 800,
+              useNativeDriver: true,
+            }).start();
+          });
+
+          console.log("🔁 Progresso atualizado:", { comum: valoresComum, extra: valoresExtra });
+        } catch (error) {
+          console.log("Erro ao carregar progresso:", error);
+        }
+      };
+
+      carregarProgresso();
+    }, [])
+  );
+
+  // ================= Scroll automático =================
   useFocusEffect(
     React.useCallback(() => {
       const { scrollTo, bloco } = route.params || {};
-      if (scrollTo !== undefined && bloco && temaRefs[scrollTo] && temaRefs[scrollTo][bloco]?.current) {
-        const nodeHandle = findNodeHandle(temaRefs[scrollTo][bloco].current);
-        const scrollHandle = findNodeHandle(scrollViewRef.current);
-        if (nodeHandle && scrollHandle) {
-          setTimeout(() => {
-            UIManager.measureLayout(
-              nodeHandle,
-              scrollHandle,
-              () => { },
-              (x, y) => scrollViewRef.current.scrollTo({ y: y - 20, animated: true })
-            );
-          }, 100);
+      if (typeof scrollTo === "number" && temaRefs[scrollTo]) {
+        const blocoAlvo = bloco && temaRefs[scrollTo][bloco] ? bloco : "comum";
+        const refAlvo = temaRefs[scrollTo][blocoAlvo]?.current;
+
+        if (refAlvo && scrollViewRef.current) {
+          const nodeHandle = findNodeHandle(refAlvo);
+          const scrollHandle = findNodeHandle(scrollViewRef.current);
+
+          if (nodeHandle && scrollHandle) {
+            InteractionManager.runAfterInteractions(() => {
+              UIManager.measureLayout(
+                nodeHandle,
+                scrollHandle,
+                () => { },
+                (x, y) => {
+                  scrollViewRef.current.scrollTo({ y: y - 40, animated: true });
+                }
+              );
+            });
+          }
         }
       }
     }, [route.params])
   );
 
-
-  useEffect(() => {
-    const { scrollTo, bloco } = route.params || {};
-    if (
-      scrollTo !== undefined &&
-      bloco &&
-      temaRefs[scrollTo] &&
-      temaRefs[scrollTo][bloco]?.current
-    ) {
-      const nodeHandle = findNodeHandle(temaRefs[scrollTo][bloco].current);
-      const scrollHandle = findNodeHandle(scrollViewRef.current);
-      if (nodeHandle && scrollHandle) {
-        // Delay mínimo para garantir que layout foi calculado
-        setTimeout(() => {
-          UIManager.measureLayout(
-            nodeHandle,
-            scrollHandle,
-            () => { },
-            (x, y) =>
-              scrollViewRef.current.scrollTo({ y: y - 20, animated: true })
-          );
-        }, 50);
-      }
-    }
-  }, [route.params]); // ✅ apenas uma vez, sem parêntese extra
-
-
-  // ================= COMPONENTES FILHOS =================
-  const CircleProgress = ({ index, size = 140, strokeColor = "#019314", onPress }) => {
+  // ================= Componentes =================
+  const CircleProgress = ({ index, tipo = "comum", size = 140, onPress }) => {
     const strokeWidth = 10;
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
-    const animatedStroke = animValues[index].interpolate({
+
+    const animatedStroke = animValues[tipo][index].interpolate({
       inputRange: [0, 1],
       outputRange: [circumference, 0],
     });
+
     const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-    const percent = Math.round((progresso[index] || 0) * 100);
+    const percent = Math.round((progresso[tipo][index] || 0) * 100);
+    const strokeColor = progresso[tipo][index] > 0 ? "#019314" : "#C8C8C8";
 
     return (
       <Pressable onPress={onPress} style={[styles.circleContainer, { width: size, height: size }]}>
         <Svg width={size} height={size}>
-          <Circle stroke="#C8C8C8" fill="none" cx={size / 2} cy={size / 2} r={radius} strokeWidth={strokeWidth} />
+          <Circle
+            stroke="#E0E0E0"
+            fill="none"
+            cx={size / 2}
+            cy={size / 2}
+            r={radius}
+            strokeWidth={strokeWidth}
+          />
           <AnimatedCircle
             stroke={strokeColor}
             fill="none"
@@ -120,7 +160,7 @@ export default function Home() {
           />
         </Svg>
         <View style={styles.iconInside}>
-          <Text style={{ fontSize: 20, fontWeight: "700", color: strokeColor }}>{percent}%</Text>
+          <Text style={{ fontSize: 20, fontWeight: "700", color: "#019314" }}>{percent}%</Text>
         </View>
       </Pressable>
     );
@@ -143,10 +183,10 @@ export default function Home() {
     </View>
   );
 
-  const BlocoComum = ({ innerRef, index, onPress }) => (
+  const BlocoComum = ({ innerRef, index, tipo = "comum", onPress }) => (
     <View ref={innerRef} collapsable={false}>
       <View style={styles.greenBox}>
-        <CircleProgress index={index} onPress={onPress} />
+        <CircleProgress index={index} tipo={tipo} onPress={onPress} />
       </View>
     </View>
   );
@@ -177,7 +217,7 @@ export default function Home() {
 
       {temas.map((t, i) => (
         <View key={i}>
-          {/* Prática Comum */}
+          {/* Bloco Extra Comum */}
           <BlocoExtra
             innerRef={temaRefs[i].extra}
             title={t}
@@ -188,35 +228,28 @@ export default function Home() {
           <BlocoComum
             innerRef={temaRefs[i].comum}
             index={i}
+            tipo="comum"
             onPress={() => navigation.navigate("PraticaComum", { scrollTo: i })}
           />
 
-          {/* Prática Extra */}
+          {/* Bloco Extra Extra */}
           <BlocoExtra
             innerRef={temaRefs[i].extra2}
             title={t}
             index={i}
             tipo="Extra"
-            onPress={() =>
-              navigation.navigate("PraticaExtra", {
-                initialQuiz: i + 1, // 👈 abre direto no tema correspondente
-                scrollTo: i,
-              })
-            }
+            onPress={() => navigation.navigate("Temas", { scrollTo: i })}
           />
           <BlocoComum
             innerRef={temaRefs[i].comum2}
             index={i}
+            tipo="extra"
             onPress={() =>
-              navigation.navigate("PraticaExtra", {
-                initialQuiz: i + 1,
-                scrollTo: i,
-              })
+              navigation.navigate("PraticaExtra", { initialQuiz: i + 1, scrollTo: i })
             }
           />
         </View>
       ))}
-
 
       <View style={{ height: 40 }} />
     </ScrollView>
