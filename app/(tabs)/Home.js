@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Animated, findNodeHandle, Image, Pressable, ScrollView, StyleSheet, Text, UIManager, View } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
@@ -35,60 +35,77 @@ export default function Home() {
         })
       );
       setProgresso(novos);
-      novos.forEach((p, i) => animValues[i].setValue(p));
+      novos.forEach((p, i) => animValues[i].setValue(p > 1 ? p / 100 : p));
     } catch (e) {
       console.log("Erro carregar progresso:", e);
     }
   };
 
-  // Scroll automático baseado em route.params.scrollTo e route.params.bloco
+
+  // 🚀 Recarrega sempre que a tela Home volta ao foco
   useFocusEffect(
     React.useCallback(() => {
-      carregarProgresso();
-
       const { scrollTo, bloco } = route.params || {};
       if (scrollTo !== undefined && bloco && temaRefs[scrollTo] && temaRefs[scrollTo][bloco]?.current) {
         const nodeHandle = findNodeHandle(temaRefs[scrollTo][bloco].current);
         const scrollHandle = findNodeHandle(scrollViewRef.current);
         if (nodeHandle && scrollHandle) {
-          // Delay mínimo para garantir que layout foi calculado
           setTimeout(() => {
             UIManager.measureLayout(
               nodeHandle,
               scrollHandle,
-              () => {},
+              () => { },
               (x, y) => scrollViewRef.current.scrollTo({ y: y - 20, animated: true })
             );
-          }, 50);
+          }, 100);
         }
       }
     }, [route.params])
   );
 
+
+  useEffect(() => {
+    const { scrollTo, bloco } = route.params || {};
+    if (
+      scrollTo !== undefined &&
+      bloco &&
+      temaRefs[scrollTo] &&
+      temaRefs[scrollTo][bloco]?.current
+    ) {
+      const nodeHandle = findNodeHandle(temaRefs[scrollTo][bloco].current);
+      const scrollHandle = findNodeHandle(scrollViewRef.current);
+      if (nodeHandle && scrollHandle) {
+        // Delay mínimo para garantir que layout foi calculado
+        setTimeout(() => {
+          UIManager.measureLayout(
+            nodeHandle,
+            scrollHandle,
+            () => { },
+            (x, y) =>
+              scrollViewRef.current.scrollTo({ y: y - 20, animated: true })
+          );
+        }, 50);
+      }
+    }
+  }, [route.params]); // ✅ apenas uma vez, sem parêntese extra
+
+
+  // ================= COMPONENTES FILHOS =================
   const CircleProgress = ({ index, size = 140, strokeColor = "#019314", onPress }) => {
     const strokeWidth = 10;
     const radius = (size - strokeWidth) / 2;
     const circumference = 2 * Math.PI * radius;
-
     const animatedStroke = animValues[index].interpolate({
       inputRange: [0, 1],
       outputRange: [circumference, 0],
     });
-
     const AnimatedCircle = Animated.createAnimatedComponent(Circle);
     const percent = Math.round((progresso[index] || 0) * 100);
 
     return (
       <Pressable onPress={onPress} style={[styles.circleContainer, { width: size, height: size }]}>
         <Svg width={size} height={size}>
-          <Circle
-            stroke="#C8C8C8"
-            fill="none"
-            cx={size / 2}
-            cy={size / 2}
-            r={radius}
-            strokeWidth={strokeWidth}
-          />
+          <Circle stroke="#C8C8C8" fill="none" cx={size / 2} cy={size / 2} r={radius} strokeWidth={strokeWidth} />
           <AnimatedCircle
             stroke={strokeColor}
             fill="none"
@@ -109,12 +126,14 @@ export default function Home() {
     );
   };
 
-  const BlocoExtra = ({ innerRef, title, index, onPress }) => (
+  const BlocoExtra = ({ innerRef, title, index, tipo, onPress }) => (
     <View ref={innerRef} collapsable={false}>
       <View style={styles.themeBox}>
         <View style={styles.themeTextContainer}>
           <Text style={styles.themeTitle}>{title}</Text>
-          <Text style={styles.themeSubtitle}>Tema {index + 1} - Práticas Extras</Text>
+          <Text style={styles.themeSubtitle}>
+            {`Tema ${String(index + 1).padStart(2, "0")} - Prática ${tipo}`}
+          </Text>
         </View>
         <View style={styles.divider} />
         <Pressable onPress={onPress}>
@@ -139,7 +158,7 @@ export default function Home() {
   ];
 
   return (
-    <ScrollView ref={scrollViewRef} style={styles.container} contentContainerStyle={{ paddingBottom: 60 }}>
+    <ScrollView ref={scrollViewRef} style={styles.container}>
       {/* Topo */}
       <View style={styles.topIcons}>
         <View style={styles.iconItem}>
@@ -158,10 +177,12 @@ export default function Home() {
 
       {temas.map((t, i) => (
         <View key={i}>
+          {/* Prática Comum */}
           <BlocoExtra
             innerRef={temaRefs[i].extra}
             title={t}
             index={i}
+            tipo="Comum"
             onPress={() => navigation.navigate("Temas", { scrollTo: i })}
           />
           <BlocoComum
@@ -169,19 +190,33 @@ export default function Home() {
             index={i}
             onPress={() => navigation.navigate("PraticaComum", { scrollTo: i })}
           />
+
+          {/* Prática Extra */}
           <BlocoExtra
             innerRef={temaRefs[i].extra2}
             title={t}
             index={i}
-            onPress={() => navigation.navigate("Temas", { scrollTo: i })}
+            tipo="Extra"
+            onPress={() =>
+              navigation.navigate("PraticaExtra", {
+                initialQuiz: i + 1, // 👈 abre direto no tema correspondente
+                scrollTo: i,
+              })
+            }
           />
           <BlocoComum
             innerRef={temaRefs[i].comum2}
             index={i}
-            onPress={() => navigation.navigate("PraticaExtra", { scrollTo: i })}
+            onPress={() =>
+              navigation.navigate("PraticaExtra", {
+                initialQuiz: i + 1,
+                scrollTo: i,
+              })
+            }
           />
         </View>
       ))}
+
 
       <View style={{ height: 40 }} />
     </ScrollView>
