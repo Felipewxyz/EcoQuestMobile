@@ -14,7 +14,7 @@ export default function Sobre() {
           <Ionicons name="chevron-back" size={22} color="#DCDCDC" />
         </View>
       </TouchableOpacity>
-
+      
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <Image
           source={require('../assets/images/logo.png')}

@@ -1,189 +1,251 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useNavigation } from "@react-navigation/native";
+import { useEffect, useRef, useState } from "react";
 import {
+  Animated,
   Dimensions,
+  Easing,
   Image,
-  ScrollView,
   StyleSheet,
-  Text,
   TouchableOpacity,
   View,
+  Text,
+  ScrollView,
 } from "react-native";
-import { FontAwesome, MaterialIcons, Ionicons } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width } = Dimensions.get("window");
 
 export default function Configuracoes() {
-  const [profileImage, setProfileImage] = useState(null);
-  const [corPerfil, setCorPerfil] = useState(null);
-  const [corBanner, setCorBanner] = useState(null);
-  const [corMoldura, setCorMoldura] = useState(null);
-
+  const navigation = useNavigation();
+  const scrollX = useRef(new Animated.Value(0)).current;
   const scrollRef = useRef(null);
-  const [currentBanner, setCurrentBanner] = useState(0);
-  const [mostrarMaisBanners, setMostrarMaisBanners] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedBanner, setSelectedBanner] = useState(null);
+  const [selectedColor, setSelectedColor] = useState(null);
+  const [expandedBanners, setExpandedBanners] = useState(false);
+  const [expandedColors, setExpandedColors] = useState(false);
 
-  const imagensBanners = [
-    { id: 1, nome: "Banner 1", uri: require("../../assets/images/sobre1.png") },
-    { id: 2, nome: "Banner 2", uri: require("../../assets/images/sobre2.png") },
-    { id: 3, nome: "Banner 3", uri: require("../../assets/images/sobre1.png") },
-    { id: 4, nome: "Banner 4", uri: require("../../assets/images/sobre2.png") },
+  // 🔹 banners do carrossel principal (ex.: Ajuda/Sobre)
+  const imagens = [
+    { id: 1, nome: "Ajuda", uri: require("../../assets/images/bannerajuda.png"), destino: "Ajuda" },
+    { id: 2, nome: "Sobre", uri: require("../../assets/images/bannersobre.png"), destino: "Sobre" },
   ];
 
-  const imagensPadrao = [
-    { id: 1, uri: "https://i.pravatar.cc/150?img=5" },
-    { id: 2, uri: "https://i.pravatar.cc/150?img=8" },
-    { id: 3, uri: "https://i.pravatar.cc/150?img=15" },
+  // 🔹 banners adicionais do usuário
+  const banners = [
+    { id: 1, uri: require("../../assets/images/banner1.png") },
+    { id: 2, uri: require("../../assets/images/banner2.png") },
+    { id: 3, uri: require("../../assets/images/banner3.png") },
+    { id: 4, uri: require("../../assets/images/banner4.png") },
   ];
 
+  // 🔹 cores sólidas
   const cores = [
-    "#000000", "#2E7D32", "#1565C0", "#AD1457",
-    "#FF5722", "#9C27B0", "#E91E63", "#FFC107",
-    "#FF9800", "#4CAF50", "#03A9F4", "#795548",
+    "#795548", "#9C27B0", "#0D47A1", "#64B5F6",
+    "#81C784", "#2E7D32", "#FFEB3B", "#FB8C00",
+    "#F44336", "#E91E63", "#9E9E9E", "#000000",
   ];
 
-  // alternar banners automaticamente
+  // 🔹 carrossel automático
   useEffect(() => {
     const interval = setInterval(() => {
-      const nextIndex = (currentBanner + 1) % imagensBanners.length;
-      setCurrentBanner(nextIndex);
-      scrollRef.current?.scrollTo({ x: width * nextIndex, animated: true });
-    }, 4000);
+      const nextIndex = (currentIndex + 1) % imagens.length;
+      Animated.timing(scrollX, {
+        toValue: width * nextIndex,
+        duration: 1200,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: false,
+      }).start(() => {
+        scrollRef.current?.scrollTo({ x: width * nextIndex, animated: false });
+        setCurrentIndex(nextIndex);
+      });
+    }, 5000);
     return () => clearInterval(interval);
-  }, [currentBanner]);
+  }, [currentIndex]);
 
-  const escolherImagem = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== "granted") {
-      alert("Permissão para acessar a galeria é necessária!");
-      return;
-    }
+  const handleScroll = Animated.event(
+    [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+    { useNativeDriver: false }
+  );
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-    });
+  const handleMomentumScrollEnd = (event) => {
+    const index = Math.round(event.nativeEvent.contentOffset.x / width);
+    setCurrentIndex(index);
+  };
 
-    if (!result.canceled) {
-      setProfileImage(result.assets[0].uri);
+  // 🔹 salvar banner ou cor selecionada
+  const handleSalvar = async () => {
+    try {
+      if (selectedBanner) {
+        await AsyncStorage.setItem("bannerSelecionado", JSON.stringify({ type: "banner", value: selectedBanner }));
+      } else if (selectedColor) {
+        await AsyncStorage.setItem("bannerSelecionado", JSON.stringify({ type: "color", value: selectedColor }));
+      }
+      navigation.navigate("Perfil");
+    } catch (error) {
+      console.log("Erro ao salvar banner:", error);
     }
   };
 
+  const handleSelecionarBanner = (item) => {
+    setSelectedBanner(item.uri);
+    setSelectedColor(null);
+  };
+
+  const handleSelecionarCor = (cor) => {
+    setSelectedColor(cor);
+    setSelectedBanner(null);
+  };
+
+  const bannersVisiveis = expandedBanners ? banners : banners.slice(0, 2);
+  const coresVisiveis = expandedColors ? cores : cores.slice(0, 4);
+
+  // 🔹 item selecionado para preview
+  const selectedItem = selectedBanner
+    ? { type: "banner", value: selectedBanner }
+    : selectedColor
+    ? { type: "color", value: selectedColor }
+    : null;
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* BANNER ATUAL */}
-      <View style={{ marginTop: 40 }}>
-        <Text style={styles.sectionTitleBig}>Como seu banner está agora</Text>
-        <View style={styles.currentBannerBox}>
-          <Image
-            source={imagensBanners[0].uri}
-            style={styles.currentBannerImage}
-            resizeMode="cover"
-          />
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={{ alignItems: "center", paddingBottom: 60 }}
+    >
+      {/* 🔹 Carrossel principal */}
+      <View style={styles.carouselWrapper}>
+        <Animated.ScrollView
+          ref={scrollRef}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onScroll={handleScroll}
+          onMomentumScrollEnd={handleMomentumScrollEnd}
+          scrollEventThrottle={16}
+          contentContainerStyle={{ paddingTop: 30 }}
+        >
+          {imagens.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              activeOpacity={0.9}
+              onPress={() => navigation.navigate(item.destino, { fromConfig: true })}
+            >
+              <Image source={item.uri} style={styles.bannerImage} resizeMode="cover" />
+            </TouchableOpacity>
+          ))}
+        </Animated.ScrollView>
+
+        {/* 🔹 Pontos do carrossel */}
+        <View style={styles.dotsContainer}>
+          {imagens.map((_, index) => (
+            <View
+              key={index}
+              style={[styles.dot, { backgroundColor: index === currentIndex ? "#0D47A1" : "#BDBDBD" }]}
+            />
+          ))}
         </View>
       </View>
 
-      {/* SEUS BANNERS */}
-      <View style={[styles.section, { marginTop: 40 }]}>
-        <View style={styles.sectionHeader}>
-          <MaterialIcons name="image" size={32} color="#000" />
-          <Text style={styles.sectionTitleBig}>Seus Banners</Text>
+      {/* 🔹 Pré-visualização */}
+      <View style={styles.previewContainer}>
+        <View style={styles.previewBox}>
+          {selectedItem?.type === "banner" ? (
+            <Image source={selectedItem.value} style={styles.previewImage} resizeMode="cover" />
+          ) : (
+            <View style={[styles.previewImage, { backgroundColor: selectedItem?.value || "#DDD" }]} />
+          )}
+        </View>
+        <Text style={styles.previewLabel}>Como seu banner está</Text>
+      </View>
 
-          {/* Botão seta para expandir */}
-          <TouchableOpacity
-            onPress={() => setMostrarMaisBanners(!mostrarMaisBanners)}
-          >
-            <Ionicons
-              name={mostrarMaisBanners ? "chevron-up" : "chevron-down"}
-              size={28}
-              color="#000"
-            />
+      {/* 🔹 Banners do usuário */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Seus banners</Text>
+          <TouchableOpacity onPress={() => setExpandedBanners(!expandedBanners)}>
+            <Text style={styles.arrow}>{expandedBanners ? "▲" : "▼"}</Text>
           </TouchableOpacity>
         </View>
 
-        {/* Primeiros 2 banners */}
-        <View style={styles.row}>
-          {imagensBanners.slice(0, 2).map((banner) => (
-            <View key={banner.id} style={styles.bannerBoxContainer}>
-              <Image source={banner.uri} style={styles.bigBannerBox} />
-              <Text style={styles.bannerLabel}>{banner.nome}</Text>
-            </View>
+        <View style={styles.bannerRow}>
+          {bannersVisiveis.map((item) => (
+            <TouchableOpacity
+              key={item.id}
+              onPress={() => handleSelecionarBanner(item)}
+              style={[styles.bannerOption, selectedBanner === item.uri && styles.selectedItem]}
+              activeOpacity={0.8}
+            >
+              <Image source={item.uri} style={styles.bannerThumb} />
+            </TouchableOpacity>
           ))}
         </View>
+      </View>
 
-        {/* Banners extras aparecem ao clicar na seta */}
-        {mostrarMaisBanners && (
-          <View style={[styles.row, { marginTop: 10 }]}>
-            {imagensBanners.slice(2, 4).map((banner) => (
-              <View key={banner.id} style={styles.bannerBoxContainer}>
-                <Image source={banner.uri} style={styles.bigBannerBox} />
-                <Text style={styles.bannerLabel}>{banner.nome}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-
-        {/* Escolher cor sólida */}
-        <View style={[styles.sectionHeader, { marginTop: 15 }]}>
-          <MaterialIcons name="color-lens" size={28} color="#000" />
-          <Text style={styles.sectionTitleSmall}>Ou escolha uma cor sólida</Text>
+      {/* 🔹 Cores sólidas */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Cores sólidas</Text>
+          <TouchableOpacity onPress={() => setExpandedColors(!expandedColors)}>
+            <Text style={styles.arrow}>{expandedColors ? "▲" : "▼"}</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.colorsGrid}>
-          {cores.map((cor, index) => (
+          {coresVisiveis.map((cor, index) => (
             <TouchableOpacity
               key={index}
-              style={[
-                styles.colorCircle,
-                { backgroundColor: cor },
-                corBanner === cor && styles.selectedColor,
-              ]}
-              onPress={() => setCorBanner(cor)}
+              onPress={() => handleSelecionarCor(cor)}
+              style={[styles.colorOption, { backgroundColor: cor }, selectedColor === cor && styles.selectedItem]}
             />
           ))}
         </View>
       </View>
 
-      {/* ... RESTO DA SUA PÁGINA MANTIDO IGUAL ... */}
+      {/* 🔹 Botão Salvar */}
+      <TouchableOpacity style={styles.saveButton} onPress={handleSalvar} activeOpacity={0.9}>
+        <Text style={styles.saveButtonText}>Salvar</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#FFF" },
-  content: { paddingBottom: 40, paddingHorizontal: 20 },
+  carouselWrapper: { position: "relative", width: "100%" },
+  bannerImage: { width: width, height: 220, borderRadius: 8 },
+  dotsContainer: { position: "absolute", bottom: 10, left: 0, right: 0, flexDirection: "row", justifyContent: "center" },
+  dot: { width: 10, height: 10, borderRadius: 5, marginHorizontal: 6 },
 
-  section: { width: "100%", marginBottom: 30 },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-  sectionTitleBig: { fontSize: 26, fontWeight: "800", color: "#000" },
-  sectionTitleSmall: { fontSize: 18, fontWeight: "700", color: "#000" },
-
-  currentBannerBox: {
-    width: "100%",
-    height: 150,
-    borderRadius: 10,
+  previewContainer: { width: "100%", alignItems: "center", marginTop: 20, marginBottom: 25 },
+  previewBox: {
+    width: "90%",
+    height: 180,
+    borderRadius: 14,
     overflow: "hidden",
-    marginTop: 10,
+    backgroundColor: "#EEE",
+    alignSelf: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
-  currentBannerImage: { width: "100%", height: "100%" },
+  previewImage: { width: "100%", height: "100%", borderRadius: 14 },
+  previewLabel: { marginTop: 10, fontSize: 16, fontWeight: "600", color: "#333" },
 
-  row: { flexDirection: "row", justifyContent: "space-between", gap: 10 },
-  bannerBoxContainer: { alignItems: "center", flex: 1 },
-  bigBannerBox: { width: "100%", height: 100, borderRadius: 10 },
-  bannerLabel: { marginTop: 5, fontWeight: "600", color: "#333" },
+  section: { width: "90%", marginTop: 30 },
+  sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
+  sectionTitle: { fontSize: 18, fontWeight: "600", color: "#0D47A1" },
+  arrow: { fontSize: 18, color: "#0D47A1" },
 
-  colorsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: 10,
-  },
-  colorCircle: { width: 35, height: 35, borderRadius: 20 },
-  selectedColor: { borderWidth: 3, borderColor: "#2E7D32" },
+  bannerRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
+  bannerOption: { width: "48%", marginBottom: 10 },
+  bannerThumb: { width: "100%", height: 100, borderRadius: 8 },
+
+  colorsGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
+  colorOption: { width: "22%", height: 60, borderRadius: 8, marginBottom: 10 },
+  selectedItem: { borderWidth: 3, borderColor: "#0D47A1" },
+
+  saveButton: { marginTop: 30, backgroundColor: "#0D47A1", paddingVertical: 14, paddingHorizontal: 50, borderRadius: 8 },
+  saveButtonText: { color: "#FFF", fontSize: 18, fontWeight: "bold" },
 });

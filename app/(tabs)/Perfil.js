@@ -1,27 +1,69 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import { useCallback, useState, useEffect } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Perfil() {
   const router = useRouter();
+  const [bannerData, setBannerData] = useState(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      const carregarBanner = async () => {
+        try {
+          const data = await AsyncStorage.getItem("bannerSelecionado");
+          if (data) {
+            setBannerData(JSON.parse(data));
+          }
+        } catch (error) {
+          console.log("Erro ao carregar banner:", error);
+        }
+      };
+
+      carregarBanner();
+    }, [])
+  );
+
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Ícone de engrenagem com efeito de toque */}
+      {/* ⚙️ Ícone de Configurações */}
       <Pressable
         style={({ pressed }) => [
           styles.configIcon,
-          pressed && { transform: [{ scale: 0.9 }], opacity: 0.7 }, // efeito suave
+          pressed && { transform: [{ scale: 0.9 }], opacity: 0.7 },
         ]}
         onPress={() => router.push("/(tabs)/Configuracoes")}
       >
         <Ionicons name="settings-outline" size={38} color="#000" />
       </Pressable>
 
-      {/* Banner verde claro */}
-      <View style={styles.banner}></View>
+      {/* 🔹 Banner dinâmico */}
+      {bannerData?.type === "banner" ? (
+        <Image
+          source={bannerData.value}
+          style={styles.banner}
+          resizeMode="cover"
+        />
+      ) : (
+        <View
+          style={[
+            styles.banner,
+            { backgroundColor: bannerData?.value || "#B4E197" },
+          ]}
+        />
+      )}
 
-      {/* Parte verde escura */}
+      {/* 🔹 Seção verde escura */}
       <View style={styles.greenSection}>
         <View style={styles.profileCircle}></View>
 
@@ -43,12 +85,15 @@ export default function Perfil() {
         </View>
       </View>
 
-      {/* Parte branca com estatísticas */}
+      {/* 🔹 Parte branca com estatísticas */}
       <View style={styles.whiteSection}>
         <View style={styles.statsBox}>
           {/* 1 - Máx de dias */}
           <View style={styles.statRow}>
-            <Image source={require("../../assets/images/gota.png")} style={styles.iconImage} />
+            <Image
+              source={require("../../assets/images/gota.png")}
+              style={styles.iconImage}
+            />
             <View style={styles.statTextBox}>
               <Text style={styles.statNumber}>397</Text>
               <Text style={styles.statLabel}>máx. de dias seguidos</Text>
@@ -57,7 +102,10 @@ export default function Perfil() {
 
           {/* 2 - EcoPoints */}
           <View style={styles.statRow}>
-            <Image source={require("../../assets/images/folha.png")} style={styles.iconImage} />
+            <Image
+              source={require("../../assets/images/folha.png")}
+              style={styles.iconImage}
+            />
             <View style={styles.statTextBox}>
               <Text style={styles.statNumber}>279</Text>
               <Text style={styles.statLabel}>total de EcoPoints</Text>
@@ -66,7 +114,10 @@ export default function Perfil() {
 
           {/* 3 - FloraCoins */}
           <View style={styles.statRow}>
-            <Image source={require("../../assets/images/flor.png")} style={styles.iconImage} />
+            <Image
+              source={require("../../assets/images/flor.png")}
+              style={styles.iconImage}
+            />
             <View style={styles.statTextBox}>
               <Text style={styles.statNumber}>113</Text>
               <Text style={styles.statLabel}>total de FloraCoins</Text>
@@ -92,7 +143,7 @@ const styles = StyleSheet.create({
   banner: {
     width: "100%",
     height: 300,
-    backgroundColor: "#B4E197",
+    backgroundColor: "#B4E197", // padrão se nada for escolhido
   },
   greenSection: {
     flexDirection: "row",
@@ -142,24 +193,6 @@ const styles = StyleSheet.create({
   levelText: {
     fontSize: 12,
     fontWeight: "600",
-  },
-
-  /* ✅ Novo botão Home */
-  buttonContainer: {
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
-    paddingVertical: 20,
-  },
-  homeButton: {
-    backgroundColor: "#7BC47F",
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 25,
-  },
-  homeButtonText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "bold",
   },
 
   whiteSection: {
