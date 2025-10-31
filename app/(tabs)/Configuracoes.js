@@ -25,13 +25,22 @@ export default function Configuracoes() {
   const [expandedBanners, setExpandedBanners] = useState(false);
   const [expandedColors, setExpandedColors] = useState(false);
 
-  // 🔹 banners do carrossel principal (ex.: Ajuda/Sobre)
+  // 🔹 Moldura e borda
+  const [selectedFrame, setSelectedFrame] = useState(null);
+  const [selectedBorderColor, setSelectedBorderColor] = useState(null);
+  const [expandedFrames, setExpandedFrames] = useState(false);
+  const [expandedBorderColors, setExpandedBorderColors] = useState(false);
+
+  // 🔹 animação na seleção de moldura
+  const frameScale = useRef(new Animated.Value(1)).current;
+
+  // banners principais
   const imagens = [
     { id: 1, nome: "Ajuda", uri: require("../../assets/images/bannerajuda.png"), destino: "Ajuda" },
     { id: 2, nome: "Sobre", uri: require("../../assets/images/bannersobre.png"), destino: "Sobre" },
   ];
 
-  // 🔹 banners adicionais do usuário
+  // banners do usuário
   const banners = [
     { id: 1, uri: require("../../assets/images/banner1.png") },
     { id: 2, uri: require("../../assets/images/banner2.png") },
@@ -39,14 +48,22 @@ export default function Configuracoes() {
     { id: 4, uri: require("../../assets/images/banner4.png") },
   ];
 
-  // 🔹 cores sólidas
+  // cores do banner e da borda
   const cores = [
     "#795548", "#9C27B0", "#0D47A1", "#64B5F6",
     "#81C784", "#2E7D32", "#FFEB3B", "#FB8C00",
     "#F44336", "#E91E63", "#9E9E9E", "#000000",
   ];
 
-  // 🔹 carrossel automático
+  // molduras
+  const molduras = [
+    { id: 1, nome: "Moldura 1", uri: require("../../assets/images/moldura1.png") },
+    { id: 2, nome: "Moldura 2", uri: require("../../assets/images/moldura1.png") },
+    { id: 3, nome: "Moldura 3", uri: require("../../assets/images/moldura1.png") },
+    { id: 4, nome: "Moldura 4", uri: require("../../assets/images/moldura1.png") },
+  ];
+
+  // carrossel automático
   useEffect(() => {
     const interval = setInterval(() => {
       const nextIndex = (currentIndex + 1) % imagens.length;
@@ -73,17 +90,40 @@ export default function Configuracoes() {
     setCurrentIndex(index);
   };
 
-  // 🔹 salvar banner ou cor selecionada
+  // salvar banner, cor e moldura
   const handleSalvar = async () => {
     try {
+      // salva banner
       if (selectedBanner) {
         await AsyncStorage.setItem("bannerSelecionado", JSON.stringify({ type: "banner", value: selectedBanner }));
       } else if (selectedColor) {
         await AsyncStorage.setItem("bannerSelecionado", JSON.stringify({ type: "color", value: selectedColor }));
       }
+
+      // salva moldura/borda
+      if (selectedFrame || selectedBorderColor) {
+        await AsyncStorage.setItem(
+          "molduraSelecionada",
+          JSON.stringify({
+            frame: selectedFrame,
+            borderColor: selectedBorderColor,
+          })
+        );
+      }
+
       navigation.navigate("Perfil");
     } catch (error) {
-      console.log("Erro ao salvar banner:", error);
+      console.log("Erro ao salvar configurações:", error);
+    }
+  };
+
+  const handleRetirarMoldura = async () => {
+    try {
+      await AsyncStorage.removeItem("molduraSelecionada");
+      setSelectedFrame(null);
+      setSelectedBorderColor(null);
+    } catch (error) {
+      console.log("Erro ao remover moldura:", error);
     }
   };
 
@@ -97,10 +137,26 @@ export default function Configuracoes() {
     setSelectedBanner(null);
   };
 
+  const handleSelecionarMoldura = (item) => {
+    setSelectedFrame(item);
+    setSelectedBorderColor(null);
+
+    Animated.sequence([
+      Animated.timing(frameScale, { toValue: 1.1, duration: 150, useNativeDriver: true }),
+      Animated.timing(frameScale, { toValue: 1, duration: 150, useNativeDriver: true }),
+    ]).start();
+  };
+
+  const handleSelecionarBorda = (cor) => {
+    setSelectedBorderColor(cor);
+    setSelectedFrame(null);
+  };
+
   const bannersVisiveis = expandedBanners ? banners : banners.slice(0, 2);
   const coresVisiveis = expandedColors ? cores : cores.slice(0, 4);
+  const moldurasVisiveis = expandedFrames ? molduras : molduras.slice(0, 2);
+  const bordasVisiveis = expandedBorderColors ? cores : cores.slice(0, 4);
 
-  // 🔹 item selecionado para preview
   const selectedItem = selectedBanner
     ? { type: "banner", value: selectedBanner }
     : selectedColor
@@ -108,11 +164,8 @@ export default function Configuracoes() {
     : null;
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={{ alignItems: "center", paddingBottom: 60 }}
-    >
-      {/* 🔹 Carrossel principal */}
+    <ScrollView style={styles.container} contentContainerStyle={{ alignItems: "center", paddingBottom: 80 }}>
+      {/* 🔹 Carrossel */}
       <View style={styles.carouselWrapper}>
         <Animated.ScrollView
           ref={scrollRef}
@@ -125,28 +178,20 @@ export default function Configuracoes() {
           contentContainerStyle={{ paddingTop: 30 }}
         >
           {imagens.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              activeOpacity={0.9}
-              onPress={() => navigation.navigate(item.destino, { fromConfig: true })}
-            >
+            <TouchableOpacity key={item.id} activeOpacity={0.9} onPress={() => navigation.navigate(item.destino, { fromConfig: true })}>
               <Image source={item.uri} style={styles.bannerImage} resizeMode="cover" />
             </TouchableOpacity>
           ))}
         </Animated.ScrollView>
 
-        {/* 🔹 Pontos do carrossel */}
         <View style={styles.dotsContainer}>
           {imagens.map((_, index) => (
-            <View
-              key={index}
-              style={[styles.dot, { backgroundColor: index === currentIndex ? "#0D47A1" : "#BDBDBD" }]}
-            />
+            <View key={index} style={[styles.dot, { backgroundColor: index === currentIndex ? "#0D47A1" : "#BDBDBD" }]} />
           ))}
         </View>
       </View>
 
-      {/* 🔹 Pré-visualização */}
+      {/* 🔹 Preview do banner */}
       <View style={styles.previewContainer}>
         <View style={styles.previewBox}>
           {selectedItem?.type === "banner" ? (
@@ -169,12 +214,7 @@ export default function Configuracoes() {
 
         <View style={styles.bannerRow}>
           {bannersVisiveis.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              onPress={() => handleSelecionarBanner(item)}
-              style={[styles.bannerOption, selectedBanner === item.uri && styles.selectedItem]}
-              activeOpacity={0.8}
-            >
+            <TouchableOpacity key={item.id} onPress={() => handleSelecionarBanner(item)} style={[styles.bannerOption, selectedBanner === item.uri && styles.selectedItem]} activeOpacity={0.8}>
               <Image source={item.uri} style={styles.bannerThumb} />
             </TouchableOpacity>
           ))}
@@ -192,19 +232,71 @@ export default function Configuracoes() {
 
         <View style={styles.colorsGrid}>
           {coresVisiveis.map((cor, index) => (
-            <TouchableOpacity
-              key={index}
-              onPress={() => handleSelecionarCor(cor)}
-              style={[styles.colorOption, { backgroundColor: cor }, selectedColor === cor && styles.selectedItem]}
-            />
+            <TouchableOpacity key={index} onPress={() => handleSelecionarCor(cor)} style={[styles.colorOption, { backgroundColor: cor }, selectedColor === cor && styles.selectedItem]} />
           ))}
         </View>
       </View>
 
-      {/* 🔹 Botão Salvar */}
-      <TouchableOpacity style={styles.saveButton} onPress={handleSalvar} activeOpacity={0.9}>
-        <Text style={styles.saveButtonText}>Salvar</Text>
-      </TouchableOpacity>
+      {/* 🔹 Moldura */}
+      <View style={styles.framePreviewContainer}>
+        <Animated.View
+          style={[
+            styles.frameCircle,
+            selectedBorderColor && { borderColor: selectedBorderColor, borderWidth: 5 },
+            { transform: [{ scale: frameScale }] },
+          ]}
+        >
+          <Image source={require("../../assets/images/perfilplaceholder.png")} style={styles.profileImage} />
+          {selectedFrame && <Image source={selectedFrame.uri} style={styles.molduraPreviewImage} resizeMode="contain" />}
+        </Animated.View>
+
+        <Text style={styles.previewLabel}>Como sua moldura está</Text>
+      </View>
+
+      {/* 🔹 Molduras */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Suas molduras</Text>
+          <TouchableOpacity onPress={() => setExpandedFrames(!expandedFrames)}>
+            <Text style={styles.arrow}>{expandedFrames ? "▲" : "▼"}</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.bannerRow}>
+          {moldurasVisiveis.map((item) => (
+            <TouchableOpacity key={item.id} onPress={() => handleSelecionarMoldura(item)} style={[styles.frameOption, selectedFrame?.id === item.id && styles.selectedItem]}>
+              <Image source={item.uri} style={styles.frameThumb} resizeMode="contain" />
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* 🔹 Cores de borda */}
+      <View style={styles.section}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Cores sólidas (borda)</Text>
+          <TouchableOpacity onPress={() => setExpandedBorderColors(!expandedBorderColors)}>
+            <Text style={styles.arrow}>{expandedBorderColors ? "▲" : "▼"}</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={styles.colorsGrid}>
+          {bordasVisiveis.map((cor, index) => (
+            <TouchableOpacity key={index} onPress={() => handleSelecionarBorda(cor)} style={[styles.colorOption, { backgroundColor: cor }, selectedBorderColor === cor && styles.selectedItem]} />
+          ))}
+        </View>
+      </View>
+
+      {/* 🔹 Botões */}
+      <View style={styles.buttonRow}>
+        <TouchableOpacity style={styles.saveButton} onPress={handleSalvar}>
+          <Text style={styles.saveButtonText}>Salvar</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.removeButton} onPress={handleRetirarMoldura}>
+          <Text style={styles.removeButtonText}>Retirar moldura/borda</Text>
+        </TouchableOpacity>
+      </View>
     </ScrollView>
   );
 }
@@ -223,7 +315,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     overflow: "hidden",
     backgroundColor: "#EEE",
-    alignSelf: "center",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.2,
@@ -246,6 +337,63 @@ const styles = StyleSheet.create({
   colorOption: { width: "22%", height: 60, borderRadius: 8, marginBottom: 10 },
   selectedItem: { borderWidth: 3, borderColor: "#0D47A1" },
 
-  saveButton: { marginTop: 30, backgroundColor: "#0D47A1", paddingVertical: 14, paddingHorizontal: 50, borderRadius: 8 },
+  // Molduras
+  framePreviewContainer: { alignItems: "center", marginTop: 40 },
+  frameCircle: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: "#EEE",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  profileImage: {
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+  },
+  molduraPreviewImage: {
+    position: "absolute",
+    width: 170,
+    height: 170,
+    borderRadius: 85,
+    zIndex: 10,
+  },
+  frameOption: {
+    width: "48%",
+    height: 140,
+    marginBottom: 10,
+    borderRadius: 10,
+    backgroundColor: "#EEE",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  frameThumb: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 10,
+  },
+
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 15,
+    marginTop: 40,
+  },
+  saveButton: {
+    backgroundColor: "#0D47A1",
+    paddingVertical: 14,
+    paddingHorizontal: 35,
+    borderRadius: 8,
+  },
   saveButtonText: { color: "#FFF", fontSize: 18, fontWeight: "bold" },
+  removeButton: {
+    backgroundColor: "#E53935",
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  removeButtonText: { color: "#FFF", fontSize: 16, fontWeight: "bold" },
 });

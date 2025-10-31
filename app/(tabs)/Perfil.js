@@ -9,30 +9,32 @@ import {
   View,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useState, useEffect } from "react";
+import { useCallback, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Perfil() {
   const router = useRouter();
   const [bannerData, setBannerData] = useState(null);
+  const [frameData, setFrameData] = useState(null); // moldura/borda selecionada
 
   useFocusEffect(
     useCallback(() => {
-      const carregarBanner = async () => {
+      const carregarConfig = async () => {
         try {
-          const data = await AsyncStorage.getItem("bannerSelecionado");
-          if (data) {
-            setBannerData(JSON.parse(data));
-          }
+          const banner = await AsyncStorage.getItem("bannerSelecionado");
+          const moldura = await AsyncStorage.getItem("molduraSelecionada");
+
+          if (banner) setBannerData(JSON.parse(banner));
+          if (moldura) setFrameData(JSON.parse(moldura));
+          else setFrameData(null);
         } catch (error) {
-          console.log("Erro ao carregar banner:", error);
+          console.log("Erro ao carregar configurações:", error);
         }
       };
 
-      carregarBanner();
+      carregarConfig();
     }, [])
   );
-
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -65,8 +67,35 @@ export default function Perfil() {
 
       {/* 🔹 Seção verde escura */}
       <View style={styles.greenSection}>
-        <View style={styles.profileCircle}></View>
+        {/* Container do perfil com moldura para fora */}
+        <View style={styles.profileWrapper}>
+          {/* Moldura decorativa para fora da foto */}
+          {frameData?.type === "moldura" && frameData.value && (
+            <Image
+              source={frameData.value}
+              style={styles.frameOutside}
+              resizeMode="contain"
+            />
+          )}
 
+          {/* Foto de perfil com borda colorida (se houver) */}
+          <View
+            style={[
+              styles.profileCircle,
+              frameData?.type === "borda" && {
+                borderColor: frameData.value,
+                borderWidth: 5,
+              },
+            ]}
+          >
+            <Image
+              source={require("../../assets/images/perfilplaceholder.png")}
+              style={styles.profileImage}
+            />
+          </View>
+        </View>
+
+        {/* Info do perfil */}
         <View style={styles.infoBox}>
           <Text style={styles.name}>Brendinha</Text>
           <Text style={styles.username}>@Brendinha_06</Text>
@@ -143,7 +172,7 @@ const styles = StyleSheet.create({
   banner: {
     width: "100%",
     height: 300,
-    backgroundColor: "#B4E197", // padrão se nada for escolhido
+    backgroundColor: "#B4E197",
   },
   greenSection: {
     flexDirection: "row",
@@ -154,18 +183,44 @@ const styles = StyleSheet.create({
     paddingRight: 20,
     marginTop: -70,
   },
+
+  // Novo container para foto + moldura
+  profileWrapper: {
+    position: "absolute",
+    top: -90,
+    left: 10,
+    width: 180,
+    height: 180,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 5,
+  },
+
   profileCircle: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
+    width: 140,
+    height: 140,
+    borderRadius: 70,
     backgroundColor: "#C4C4C4",
     borderWidth: 3,
     borderColor: "#FFFFFF",
-    position: "absolute",
-    top: -75,
-    left: 20,
-    zIndex: 5,
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 2,
+    overflow: "hidden", // para a foto não sair do círculo
   },
+  profileImage: {
+    width: 130,
+    height: 130,
+    borderRadius: 65,
+  },
+  frameOutside: {
+    position: "absolute",
+    width: 200,
+    height: 200,
+    top: -30,
+    zIndex: 3,
+  },
+
   infoBox: {
     flex: 1,
     justifyContent: "center",
