@@ -35,6 +35,9 @@ export default function Home() {
     extra: [0, 0, 0],
   });
 
+  // controle de temas desbloqueados
+  const [desbloqueados, setDesbloqueados] = useState([true, false, false]);
+
   // animValues separados por tipo e tema
   const animValues = useRef({
     comum: [new Animated.Value(0), new Animated.Value(0), new Animated.Value(0)],
@@ -58,7 +61,11 @@ export default function Home() {
           const valoresExtra = await Promise.all(
             chavesExtra.map(async (key) => {
               const value = await AsyncStorage.getItem(key);
-              return value ? parseFloat(value) : 0;
+              const num = parseFloat(value);
+              if (isNaN(num)) return 0;
+              if (num > 1) return 1;
+              if (num < 0) return 0;
+              return num;
             })
           );
 
@@ -69,19 +76,17 @@ export default function Home() {
             Animated.timing(animValues.comum[i], {
               toValue: p > 1 ? p / 100 : p,
               duration: 800,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }).start();
           });
 
           valoresExtra.forEach((p, i) => {
             Animated.timing(animValues.extra[i], {
-              toValue: p > 1 ? p / 100 : p,
+              toValue: p,
               duration: 800,
-              useNativeDriver: true,
+              useNativeDriver: false,
             }).start();
           });
-
-          console.log("🔁 Progresso atualizado:", { comum: valoresComum, extra: valoresExtra });
         } catch (error) {
           console.log("Erro ao carregar progresso:", error);
         }
@@ -90,6 +95,23 @@ export default function Home() {
       carregarProgresso();
     }, [])
   );
+
+  // ================= Atualizar desbloqueios =================
+  useEffect(() => {
+    const novosDesbloqueios = [...desbloqueados];
+
+    // desbloqueia tema 2 se tema 1 estiver completo
+    if (progresso.comum[0] === 1 && progresso.extra[0] === 1) {
+      novosDesbloqueios[1] = true;
+    }
+
+    // desbloqueia tema 3 se tema 2 estiver completo
+    if (progresso.comum[1] === 1 && progresso.extra[1] === 1) {
+      novosDesbloqueios[2] = true;
+    }
+
+    setDesbloqueados(novosDesbloqueios);
+  }, [progresso]);
 
   // ================= Scroll automático =================
   useFocusEffect(
@@ -108,7 +130,7 @@ export default function Home() {
               UIManager.measureLayout(
                 nodeHandle,
                 scrollHandle,
-                () => { },
+                () => {},
                 (x, y) => {
                   scrollViewRef.current.scrollTo({ y: y - 40, animated: true });
                 }
@@ -215,41 +237,53 @@ export default function Home() {
         </View>
       </View>
 
-      {temas.map((t, i) => (
-        <View key={i}>
-          {/* Bloco Extra Comum */}
-          <BlocoExtra
-            innerRef={temaRefs[i].extra}
-            title={t}
-            index={i}
-            tipo="Comum"
-            onPress={() => navigation.navigate("Temas", { scrollTo: i })}
-          />
-          <BlocoComum
-            innerRef={temaRefs[i].comum}
-            index={i}
-            tipo="comum"
-            onPress={() => navigation.navigate("PraticaComum", { scrollTo: i })}
-          />
+      {temas.map((t, i) => {
+        const bloqueado = !desbloqueados[i];
 
-          {/* Bloco Extra Extra */}
-          <BlocoExtra
-            innerRef={temaRefs[i].extra2}
-            title={t}
-            index={i}
-            tipo="Extra"
-            onPress={() => navigation.navigate("Temas", { scrollTo: i })}
-          />
-          <BlocoComum
-            innerRef={temaRefs[i].comum2}
-            index={i}
-            tipo="extra"
-            onPress={() =>
-              navigation.navigate("PraticaExtra", { initialQuiz: i + 1, scrollTo: i })
-            }
-          />
-        </View>
-      ))}
+        return (
+          <View key={i} style={{ position: "relative" }}>
+            {/* Bloco Extra Comum */}
+            <BlocoExtra
+              innerRef={temaRefs[i].extra}
+              title={t}
+              index={i}
+              tipo="Comum"
+              onPress={() => navigation.navigate("Temas", { scrollTo: i })}
+            />
+            <BlocoComum
+              innerRef={temaRefs[i].comum}
+              index={i}
+              tipo="comum"
+              onPress={() => navigation.navigate("PraticaComum", { scrollTo: i })}
+            />
+
+            {/* Bloco Extra Extra */}
+            <BlocoExtra
+              innerRef={temaRefs[i].extra2}
+              title={t}
+              index={i}
+              tipo="Extra"
+              onPress={() => navigation.navigate("Temas", { scrollTo: i })}
+            />
+            <BlocoComum
+              innerRef={temaRefs[i].comum2}
+              index={i}
+              tipo="extra"
+              onPress={() =>
+                navigation.navigate("PraticaExtra", { initialQuiz: i + 1, scrollTo: i })
+              }
+            />
+
+            {bloqueado && (
+              <View style={styles.overlay}>
+                <Text style={styles.overlayText}>
+                  Complete o tema anterior para desbloquear esse
+                </Text>
+              </View>
+            )}
+          </View>
+        );
+      })}
 
       <View style={{ height: 40 }} />
     </ScrollView>
@@ -290,4 +324,22 @@ const styles = StyleSheet.create({
   },
   circleContainer: { alignItems: "center", justifyContent: "center" },
   iconInside: { position: "absolute", top: "50%", left: "50%", transform: [{ translateX: -18 }, { translateY: -12 }] },
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(255,255,255,0.8)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 10,
+  },
+  overlayText: {
+    color: "#000",
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
+    paddingHorizontal: 10,
+  },
 });

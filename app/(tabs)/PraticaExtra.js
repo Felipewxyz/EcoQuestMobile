@@ -20,17 +20,18 @@ const QuizBlock = React.memo(({ quiz, quizIndex, scrollRef }) => {
   const [showExplanation, setShowExplanation] = useState(false);
   const [score, setScore] = useState(0);
   const [showModal, setShowModal] = useState(false);
+  const [quizCompleted, setQuizCompleted] = useState(false);
 
   const question = quiz.questions[currentQuestion];
 
-  // 🔄 Recupera progresso salvo (ao montar)
+  // 🔄 Recupera progresso salvo
   useEffect(() => {
     const loadProgress = async () => {
       try {
         const key = `extra${quizIndex + 1}`;
         const saved = await AsyncStorage.getItem(key);
         if (saved) {
-          const progress = parseFloat(saved);
+          const progress = Math.min(Math.max(parseFloat(saved) || 0, 0), 1);
           const total = quiz.questions.length;
           const restoredIndex = Math.floor(progress * total);
           if (restoredIndex < total) setCurrentQuestion(restoredIndex);
@@ -48,15 +49,17 @@ const QuizBlock = React.memo(({ quiz, quizIndex, scrollRef }) => {
       try {
         const total = quiz.questions.length;
         let progress = currentQuestion / total;
-        if (showModal) progress = 1; // 100% concluído
+        if (showModal || quizCompleted) progress = 1;
+
+        const progressoNormalizado = Math.min(Math.max(progress, 0), 1);
         const key = `extra${quizIndex + 1}`;
-        await AsyncStorage.setItem(key, JSON.stringify(progress));
+        await AsyncStorage.setItem(key, JSON.stringify(progressoNormalizado));
       } catch (e) {
         console.log("Erro ao salvar progresso extra:", e);
       }
     };
     saveProgress();
-  }, [currentQuestion, showModal]);
+  }, [currentQuestion, showModal, quizCompleted]);
 
   const handleOptionPress = (index) => {
     if (selectedOption !== null) return;
@@ -65,74 +68,96 @@ const QuizBlock = React.memo(({ quiz, quizIndex, scrollRef }) => {
     if (index === question.correct) setScore((prev) => prev + 1);
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     setSelectedOption(null);
     setShowExplanation(false);
-    //scrollRef.current?.scrollTo({ y: 0, animated: true });
 
     if (currentQuestion + 1 < quiz.questions.length) {
       setCurrentQuestion((prev) => prev + 1);
     } else {
+      // Concluído
+      const key = `extra${quizIndex + 1}`;
+      await AsyncStorage.setItem(key, JSON.stringify(1));
       setShowModal(true);
     }
   };
 
-  const handleCloseModal = async () => {
-    await AsyncStorage.setItem(`extra${quizIndex + 1}`, JSON.stringify(0));
-    setShowModal(false);
+  const handleResetQuiz = async () => {
     setCurrentQuestion(0);
     setScore(0);
     setSelectedOption(null);
     setShowExplanation(false);
+    setQuizCompleted(false);
+    setShowModal(false);
+
+    const key = `extra${quizIndex + 1}`;
+    await AsyncStorage.setItem(key, JSON.stringify(0));
   };
 
   return (
     <View style={styles.card}>
       <Text style={styles.quizTitle}>{quiz.title}</Text>
-      <Text style={styles.questionText}>{question.question}</Text>
 
-      {question.options.map((option, index) => {
-        const isSelected = selectedOption === index;
-        const isCorrect = question.correct === index;
-        let backgroundColor = "#FFF";
-
-        if (showExplanation) {
-          if (isCorrect) backgroundColor = "#C6F6D5";
-          else if (isSelected && !isCorrect) backgroundColor = "#FED7D7";
-        } else if (isSelected) {
-          backgroundColor = "#E0F2E9";
-        }
-
-        return (
-          <TouchableOpacity
-            key={index}
-            style={[styles.optionButton, { backgroundColor }]}
-            onPress={() => handleOptionPress(index)}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.optionText}>{option}</Text>
-          </TouchableOpacity>
-        );
-      })}
-
-      {showExplanation && (
-        <View style={styles.explanationBox}>
-          <Text style={styles.explanationTitle}>
-            {selectedOption === question.correct
-              ? "✅ Resposta correta!"
-              : "❌ Resposta incorreta"}
+      {/* Tela final grande */}
+      {quizCompleted ? (
+        <View style={styles.finalBox}>
+          <Text style={styles.finalTitle}>🎉 Quiz Concluído!</Text>
+          <Text style={styles.finalText}>
+            Você acertou {score} de {quiz.questions.length} perguntas!
           </Text>
-          <Text style={styles.explanationText}>{question.explanation}</Text>
-          <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-            <Text style={styles.nextButtonText}>
-              {currentQuestion + 1 < quiz.questions.length
-                ? "Próxima pergunta ➜"
-                : "Finalizar Quiz"}
-            </Text>
+
+          <TouchableOpacity
+            style={[styles.modalButton, { backgroundColor: "#019314", marginTop: 10 }]}
+            onPress={handleResetQuiz}
+          >
+            <Text style={styles.modalButtonText}>🔁 Refazer Quiz</Text>
           </TouchableOpacity>
         </View>
+      ) : (
+        <>
+          <Text style={styles.questionText}>{question.question}</Text>
+
+          {question.options.map((option, index) => {
+            const isSelected = selectedOption === index;
+            const isCorrect = question.correct === index;
+            let backgroundColor = "#FFF";
+
+            if (showExplanation) {
+              if (isCorrect) backgroundColor = "#C6F6D5";
+              else if (isSelected && !isCorrect) backgroundColor = "#FED7D7";
+            } else if (isSelected) {
+              backgroundColor = "#E0F2E9";
+            }
+
+            return (
+              <TouchableOpacity
+                key={index}
+                style={[styles.optionButton, { backgroundColor }]}
+                onPress={() => handleOptionPress(index)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.optionText}>{option}</Text>
+              </TouchableOpacity>
+            );
+          })}
+
+          {showExplanation && (
+            <View style={styles.explanationBox}>
+              <Text style={styles.explanationTitle}>
+                {selectedOption === question.correct ? "✅ Resposta correta!" : "❌ Resposta incorreta"}
+              </Text>
+              <Text style={styles.explanationText}>{question.explanation}</Text>
+              <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+                <Text style={styles.nextButtonText}>
+                  {currentQuestion + 1 < quiz.questions.length ? "Próxima pergunta ➜" : "Finalizar Quiz"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+        </>
       )}
 
+      {/* Modal pequeno */}
       <Modal visible={showModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={styles.modalBox}>
@@ -144,14 +169,17 @@ const QuizBlock = React.memo(({ quiz, quizIndex, scrollRef }) => {
             <View style={{ flexDirection: "row", justifyContent: "space-between", width: "100%" }}>
               <TouchableOpacity
                 style={[styles.modalButton, { flex: 1, marginRight: 8 }]}
-                onPress={handleCloseModal} // Zera progresso e reinicia
+                onPress={handleResetQuiz}
               >
                 <Text style={styles.modalButtonText}>Refazer Quiz</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
                 style={[styles.modalButton, { flex: 1, marginLeft: 8, backgroundColor: "#019314" }]}
-                onPress={() => setShowModal(false)} // Apenas fecha modal mantendo progresso
+                onPress={() => {
+                  setShowModal(false);
+                  setQuizCompleted(true);
+                }}
               >
                 <Text style={styles.modalButtonText}>Concluir</Text>
               </TouchableOpacity>
@@ -369,4 +397,25 @@ const styles = StyleSheet.create({
   modalText: { fontSize: 16, color: "#333", marginBottom: 20, textAlign: "center" },
   modalButton: { backgroundColor: "#019314", borderRadius: 8, paddingVertical: 10, paddingHorizontal: 20 },
   modalButtonText: { color: "#FFF", fontWeight: "bold", fontSize: 16 },
+  finalBox: {
+    backgroundColor: "#F0FDF4",
+    borderRadius: 12,
+    padding: 24,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#019314",
+  },
+  finalTitle: {
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#019314",
+    marginBottom: 10,
+    textAlign: "center",
+  },
+  finalText: {
+    fontSize: 16,
+    color: "#333",
+    textAlign: "center",
+    marginBottom: 20,
+  },
 });

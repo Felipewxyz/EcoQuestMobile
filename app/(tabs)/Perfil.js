@@ -220,7 +220,6 @@ const styles = StyleSheet.create({
     top: -30,
     zIndex: 3,
   },
-
   infoBox: {
     flex: 1,
     justifyContent: "center",

@@ -54,8 +54,6 @@ export default function Temas() {
     navigation.navigate("Home", { scrollTo: id - 1, bloco: "comum" });
   };
 
-
-
   return (
     <ScrollView contentContainerStyle={styles.container}>
       <Animated.View
