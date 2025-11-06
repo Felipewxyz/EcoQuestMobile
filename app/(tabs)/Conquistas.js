@@ -43,8 +43,8 @@ export default function Conquistas() {
 
   const months = ["Jan.", "Fev.", "Mar.", "Abr.", "Mai.", "Jun.", "Jul.", "Ago.", "Set.", "Out.", "Nov.", "Dez."];
 
-  // bloqueados agora: Abril(3), Julho(6), Novembro(10), Dezembro(11)
-  const lockedMonths = [3, 6, 10, 11];
+  // bloqueados agora: Abril(3), Julho(6), Dezembro(11)
+  const lockedMonths = [3, 6, 11]; // Novembro removido
 
   // animação do dígito (mantive seu comportamento)
   const animateYearChange = (newYear) => {
@@ -247,8 +247,8 @@ const styles = StyleSheet.create({
 
   imagesContainer: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", width: "90%" },
   imageWrapper: { alignItems: "center", marginBottom: 14 },
-  imageContainer: { position: "relative", borderRadius: 8, overflow: "hidden" },
-  imageItem: { width: screenWidth * 0.42, height: 165, borderRadius: 8, resizeMode: "cover" },
+  imageContainer: { position: "relative", borderRadius: 8, overflow: "hidden", width: screenWidth * 0.42 },
+  imageItem: { width: "100%", height: 165, borderRadius: 8, resizeMode: "contain" },
 
   blurOverlay: { ...StyleSheet.absoluteFillObject, borderRadius: 8 },
   lockIcon: { position: "absolute", top: "50%", left: "50%", transform: [{ translateX: -25 }, { translateY: -25 }] },
