@@ -1,7 +1,7 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import React, { useEffect, useRef, useState } from "react";
+import { useNavigation, useRoute, useFocusEffect } from "@react-navigation/native";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import {
   Modal,
   ScrollView,
@@ -14,7 +14,7 @@ import {
 /* ===========================================
    COMPONENTE MEMOIZADO DE CADA QUIZ
    =========================================== */
-const QuizBlock = React.memo(({ quiz, quizIndex, scrollRef }) => {
+const QuizBlock = React.memo(({ quiz, quizIndex, scrollRef, bloqueado }) => {
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
   const [showExplanation, setShowExplanation] = useState(false);
@@ -75,7 +75,6 @@ const QuizBlock = React.memo(({ quiz, quizIndex, scrollRef }) => {
     if (currentQuestion + 1 < quiz.questions.length) {
       setCurrentQuestion((prev) => prev + 1);
     } else {
-      // Concluído
       const key = `extra${quizIndex + 1}`;
       await AsyncStorage.setItem(key, JSON.stringify(1));
       setShowModal(true);
@@ -95,98 +94,122 @@ const QuizBlock = React.memo(({ quiz, quizIndex, scrollRef }) => {
   };
 
   return (
-    <View style={styles.card}>
-      <Text style={styles.quizTitle}>{quiz.title}</Text>
+    <View style={{ position: "relative" }}>
+      <View style={styles.card}>
+        <Text style={styles.quizTitle}>{quiz.title}</Text>
 
-      {/* Tela final grande */}
-      {quizCompleted ? (
-        <View style={styles.finalBox}>
-          <Text style={styles.finalTitle}>🎉 Quiz Concluído!</Text>
-          <Text style={styles.finalText}>
-            Você acertou {score} de {quiz.questions.length} perguntas!
-          </Text>
-
-          <TouchableOpacity
-            style={[styles.modalButton, { backgroundColor: "#019314", marginTop: 10 }]}
-            onPress={handleResetQuiz}
-          >
-            <Text style={styles.modalButtonText}>🔁 Refazer Quiz</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <>
-          <Text style={styles.questionText}>{question.question}</Text>
-
-          {question.options.map((option, index) => {
-            const isSelected = selectedOption === index;
-            const isCorrect = question.correct === index;
-            let backgroundColor = "#FFF";
-
-            if (showExplanation) {
-              if (isCorrect) backgroundColor = "#C6F6D5";
-              else if (isSelected && !isCorrect) backgroundColor = "#FED7D7";
-            } else if (isSelected) {
-              backgroundColor = "#E0F2E9";
-            }
-
-            return (
-              <TouchableOpacity
-                key={index}
-                style={[styles.optionButton, { backgroundColor }]}
-                onPress={() => handleOptionPress(index)}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.optionText}>{option}</Text>
-              </TouchableOpacity>
-            );
-          })}
-
-          {showExplanation && (
-            <View style={styles.explanationBox}>
-              <Text style={styles.explanationTitle}>
-                {selectedOption === question.correct ? "✅ Resposta correta!" : "❌ Resposta incorreta"}
-              </Text>
-              <Text style={styles.explanationText}>{question.explanation}</Text>
-              <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-                <Text style={styles.nextButtonText}>
-                  {currentQuestion + 1 < quiz.questions.length ? "Próxima pergunta ➜" : "Finalizar Quiz"}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </>
-      )}
-
-      {/* Modal pequeno */}
-      <Modal visible={showModal} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalBox}>
-            <Text style={styles.modalTitle}>🎉 Quiz Concluído!</Text>
-            <Text style={styles.modalText}>
+        {/* Tela final grande */}
+        {quizCompleted ? (
+          <View style={styles.finalBox}>
+            <Text style={styles.finalTitle}>🎉 Quiz Concluído!</Text>
+            <Text style={styles.finalText}>
               Você acertou {score} de {quiz.questions.length} perguntas!
             </Text>
 
-            <View style={{ flexDirection: "row", justifyContent: "space-between", width: "100%" }}>
-              <TouchableOpacity
-                style={[styles.modalButton, { flex: 1, marginRight: 8 }]}
-                onPress={handleResetQuiz}
-              >
-                <Text style={styles.modalButtonText}>Refazer Quiz</Text>
-              </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.modalButton, { backgroundColor: "#019314", marginTop: 10 }]}
+              onPress={handleResetQuiz}
+            >
+              <Text style={styles.modalButtonText}>🔁 Refazer Quiz</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <>
+            <Text style={styles.questionText}>{question.question}</Text>
 
-              <TouchableOpacity
-                style={[styles.modalButton, { flex: 1, marginLeft: 8, backgroundColor: "#019314" }]}
-                onPress={() => {
-                  setShowModal(false);
-                  setQuizCompleted(true);
+            {question.options.map((option, index) => {
+              const isSelected = selectedOption === index;
+              const isCorrect = question.correct === index;
+              let backgroundColor = "#FFF";
+
+              if (showExplanation) {
+                if (isCorrect) backgroundColor = "#C6F6D5";
+                else if (isSelected && !isCorrect) backgroundColor = "#FED7D7";
+              } else if (isSelected) {
+                backgroundColor = "#E0F2E9";
+              }
+
+              return (
+                <TouchableOpacity
+                  key={index}
+                  style={[styles.optionButton, { backgroundColor }]}
+                  onPress={() => handleOptionPress(index)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.optionText}>{option}</Text>
+                </TouchableOpacity>
+              );
+            })}
+
+            {showExplanation && (
+              <View style={styles.explanationBox}>
+                <Text style={styles.explanationTitle}>
+                  {selectedOption === question.correct
+                    ? "✅ Resposta correta!"
+                    : "❌ Resposta incorreta"}
+                </Text>
+                <Text style={styles.explanationText}>{question.explanation}</Text>
+                <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
+                  <Text style={styles.nextButtonText}>
+                    {currentQuestion + 1 < quiz.questions.length
+                      ? "Próxima pergunta ➜"
+                      : "Finalizar Quiz"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </>
+        )}
+
+        {/* Modal pequeno */}
+        <Modal visible={showModal} transparent animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalBox}>
+              <Text style={styles.modalTitle}>🎉 Quiz Concluído!</Text>
+              <Text style={styles.modalText}>
+                Você acertou {score} de {quiz.questions.length} perguntas!
+              </Text>
+
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  width: "100%",
                 }}
               >
-                <Text style={styles.modalButtonText}>Concluir</Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, { flex: 1, marginRight: 8 }]}
+                  onPress={handleResetQuiz}
+                >
+                  <Text style={styles.modalButtonText}>Refazer Quiz</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.modalButton,
+                    { flex: 1, marginLeft: 8, backgroundColor: "#019314" },
+                  ]}
+                  onPress={() => {
+                    setShowModal(false);
+                    setQuizCompleted(true);
+                  }}
+                >
+                  <Text style={styles.modalButtonText}>Concluir</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
+        </Modal>
+      </View>
+
+      {/* Overlay bloqueado */}
+      {bloqueado && (
+        <View style={styles.overlay}>
+          <Text style={styles.overlayText}>
+            Complete o tema anterior para desbloquear esse
+          </Text>
         </View>
-      </Modal>
+      )}
     </View>
   );
 });
@@ -200,6 +223,8 @@ export default function PraticaExtra() {
   const params = route.params;
   const scrollRef = useRef(null);
   const [quizLayouts, setQuizLayouts] = useState([]);
+  const [progresso, setProgresso] = useState({ comum: [0, 0, 0], extra: [0, 0, 0] });
+  const [desbloqueados, setDesbloqueados] = useState([true, false, false]); // só o primeiro começa desbloqueado
 
   const quizzes = [
     {
@@ -323,6 +348,55 @@ export default function PraticaExtra() {
     },
   ];
 
+  // 🔄 Recarrega progresso sempre que a tela de Prática Extra ganha foco
+  useFocusEffect(
+    useCallback(() => {
+      const carregarProgresso = async () => {
+        try {
+          const chavesComum = ["pratica1", "pratica2", "pratica3"];
+          const chavesExtra = ["extra1", "extra2", "extra3"];
+
+          const valoresComum = await Promise.all(
+            chavesComum.map(async (key) => {
+              const value = await AsyncStorage.getItem(key);
+              const num = parseFloat(value);
+              if (isNaN(num)) return 0;
+              return Math.min(Math.max(num, 0), 1);
+            })
+          );
+
+          const valoresExtra = await Promise.all(
+            chavesExtra.map(async (key) => {
+              const value = await AsyncStorage.getItem(key);
+              const num = parseFloat(value);
+              if (isNaN(num)) return 0;
+              return Math.min(Math.max(num, 0), 1);
+            })
+          );
+
+          setProgresso({ comum: valoresComum, extra: valoresExtra });
+        } catch (e) {
+          console.log("Erro ao carregar progresso:", e);
+        }
+      };
+
+      carregarProgresso();
+    }, [])
+  );
+
+  // 🔓 Atualiza desbloqueios enquanto o app está aberto
+  useEffect(() => {
+    const novos = [true, false, false];
+
+    // desbloqueia Tema 2 Extra se Tema 1 Comum estiver 100%
+    if (progresso.comum[0] === 1) novos[1] = true;
+
+    // desbloqueia Tema 3 Extra se Tema 2 Comum estiver 100%
+    if (progresso.comum[1] === 1) novos[2] = true;
+
+    setDesbloqueados(novos);
+  }, [progresso]);
+
   // Scroll automático
   useEffect(() => {
     if (
@@ -350,24 +424,47 @@ export default function PraticaExtra() {
       </TouchableOpacity>
 
       <ScrollView ref={scrollRef} contentContainerStyle={styles.scrollContainer}>
-        {quizzes.map((quiz, index) => (
-          <View
-            key={index}
-            onLayout={(event) => {
-              const { y } = event.nativeEvent.layout;
-              setQuizLayouts((prev) => {
-                if (prev[index] !== y) {
-                  const newLayouts = [...prev];
-                  newLayouts[index] = y;
-                  return newLayouts;
-                }
-                return prev;
-              });
-            }}
-          >
-            <QuizBlock quiz={quiz} quizIndex={index} scrollRef={scrollRef} />
-          </View>
-        ))}
+        {quizzes.map((quiz, index) => {
+          const bloqueado = !desbloqueados[index];
+
+          return (
+            <View
+              key={index}
+              onLayout={(event) => {
+                const { y } = event.nativeEvent.layout;
+                setQuizLayouts((prev) => {
+                  if (prev[index] !== y) {
+                    const newLayouts = [...prev];
+                    newLayouts[index] = y;
+                    return newLayouts;
+                  }
+                  return prev;
+                });
+              }}
+              style={{ position: "relative" }}
+            >
+              <QuizBlock quiz={quiz} quizIndex={index} scrollRef={scrollRef} />
+
+              {/* 🔒 Overlay de bloqueio (fundo branco translúcido) */}
+              {bloqueado && (
+                <View
+                  style={{
+                    ...StyleSheet.absoluteFillObject,
+                    backgroundColor: "rgba(255,255,255,0.9)",
+                    borderRadius: 12,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    padding: 20,
+                  }}
+                >
+                  <Text style={{ color: "#019314", fontWeight: "600", fontSize: 16, textAlign: "center" }}>
+                    Complete o tema anterior para desbloquear esse
+                  </Text>
+                </View>
+              )}
+            </View>
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -417,5 +514,24 @@ const styles = StyleSheet.create({
     color: "#333",
     textAlign: "center",
     marginBottom: 20,
+  },
+  // overlay bloqueio
+  overlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(255,255,255,0.85)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 12,
+  },
+  overlayText: {
+    color: "#000",
+    fontSize: 14,
+    fontWeight: "600",
+    textAlign: "center",
+    paddingHorizontal: 10,
   },
 });
