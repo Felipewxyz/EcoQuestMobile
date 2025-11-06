@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
     Alert,
     Image,
@@ -273,26 +273,62 @@ export default function PraticaComum() {
     const blocosRefs = [useRef(null), useRef(null), useRef(null)];
     const route = useRoute();
 
+    const [progresso, setProgresso] = useState({ comum: [0, 0, 0], extra: [0, 0, 0] });
+    const [desbloqueados, setDesbloqueados] = useState([true, false, false]);
+
+    // 🔹 PASSO 2: carregar progresso do AsyncStorage
+    useFocusEffect(
+        React.useCallback(() => {
+            const carregarProgresso = async () => {
+                try {
+                    const chavesComum = ["pratica1", "pratica2", "pratica3"];
+                    const chavesExtra = ["extra1", "extra2", "extra3"];
+
+                    const valoresComum = await Promise.all(
+                        chavesComum.map(async (key) => {
+                            const value = await AsyncStorage.getItem(key);
+                            return value ? parseFloat(value) : 0;
+                        })
+                    );
+
+                    const valoresExtra = await Promise.all(
+                        chavesExtra.map(async (key) => {
+                            const value = await AsyncStorage.getItem(key);
+                            return value ? parseFloat(value) : 0;
+                        })
+                    );
+
+                    setProgresso({ comum: valoresComum, extra: valoresExtra });
+                } catch (e) {
+                    console.log("Erro ao carregar progresso:", e);
+                }
+            };
+
+            carregarProgresso();
+        }, [])
+    );
+
+    // 🔹 PASSO 3: desbloquear as práticas com base em comum + extra
+    useEffect(() => {
+        const novos = [...desbloqueados];
+        if (progresso.comum[0] === 1 && progresso.extra[0] === 1) novos[1] = true;
+        if (progresso.comum[1] === 1 && progresso.extra[1] === 1) novos[2] = true;
+        setDesbloqueados(novos);
+    }, [progresso]);
+
+    // scroll automático (mantém o seu)
     useFocusEffect(
         React.useCallback(() => {
             const scrollTo = route.params?.scrollTo;
-
-            if (
-                scrollTo !== undefined &&
-                blocosRefs[scrollTo]?.current &&
-                scrollRef.current
-            ) {
+            if (scrollTo !== undefined && blocosRefs[scrollTo]?.current && scrollRef.current) {
                 const nodeHandle = findNodeHandle(blocosRefs[scrollTo].current);
                 const scrollHandle = findNodeHandle(scrollRef.current);
-
                 if (nodeHandle && scrollHandle) {
                     UIManager.measureLayout(
                         nodeHandle,
                         scrollHandle,
                         () => { },
-                        (x, y) => {
-                            scrollRef.current.scrollTo({ y: y - 20, animated: true });
-                        }
+                        (x, y) => scrollRef.current.scrollTo({ y: y - 20, animated: true })
                     );
                 }
             }
@@ -305,9 +341,49 @@ export default function PraticaComum() {
             style={styles.container}
             contentContainerStyle={{ paddingBottom: 60 }}
         >
-            <BlocoPraticaComum ref={blocosRefs[0]} titulo="Prática 1" subtitulo="Tema 01" storageKey="pratica1" />
-            <BlocoPraticaComum ref={blocosRefs[1]} titulo="Prática 2" subtitulo="Tema 02" storageKey="pratica2" />
-            <BlocoPraticaComum ref={blocosRefs[2]} titulo="Prática 3" subtitulo="Tema 03" storageKey="pratica3" />
+            {/* ===== Prática 1 (sempre desbloqueada) ===== */}
+            <BlocoPraticaComum
+                ref={blocosRefs[0]}
+                titulo="Prática 1"
+                subtitulo="Tema 01"
+                storageKey="pratica1"
+            />
+
+            {/* ===== Prática 2 ===== */}
+            <View style={{ position: "relative" }}>
+                <BlocoPraticaComum
+                    ref={blocosRefs[1]}
+                    titulo="Prática 2"
+                    subtitulo="Tema 02"
+                    storageKey="pratica2"
+                />
+
+                {!desbloqueados[1] && (
+                    <View style={styles.overlay} pointerEvents="auto">
+                        <Text style={styles.overlayText}>
+                            Complete a prática anterior para desbloquear esta
+                        </Text>
+                    </View>
+                )}
+            </View>
+
+            {/* ===== Prática 3 ===== */}
+            <View style={{ position: "relative" }}>
+                <BlocoPraticaComum
+                    ref={blocosRefs[2]}
+                    titulo="Prática 3"
+                    subtitulo="Tema 03"
+                    storageKey="pratica3"
+                />
+
+                {!desbloqueados[2] && (
+                    <View style={styles.overlay} pointerEvents="auto">
+                        <Text style={styles.overlayText}>
+                            Complete a prática anterior para desbloquear esta
+                        </Text>
+                    </View>
+                )}
+            </View>
         </ScrollView>
     );
 }
@@ -352,4 +428,24 @@ const styles = StyleSheet.create({
     modalConteudo: { justifyContent: "center", alignItems: "center" },
     imagemAmpliada: { width: 340, height: 340, borderRadius: 12, backgroundColor: "#DDD", resizeMode: "contain" },
     botaoFechar: { position: "absolute", top: 10, right: 10, padding: 10 },
+    overlay: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: "rgba(255,255,255,0.85)",
+        justifyContent: "center",
+        alignItems: "center",
+        borderRadius: 12,
+        zIndex: 10, // garante que o overlay fique por cima
+    },
+    overlayText: {
+        color: "#000",
+        fontSize: 14,
+        fontWeight: "600",
+        textAlign: "center",
+        paddingHorizontal: 10,
+    },
+
 });

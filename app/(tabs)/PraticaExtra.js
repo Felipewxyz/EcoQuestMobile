@@ -388,11 +388,11 @@ export default function PraticaExtra() {
   useEffect(() => {
     const novos = [true, false, false];
 
-    // desbloqueia Tema 2 Extra se Tema 1 Comum estiver 100%
-    if (progresso.comum[0] === 1) novos[1] = true;
+    // desbloqueia Tema 2 Extra se Tema 1 (comum + extra) estiver completo
+    if (progresso.comum[0] === 1 && progresso.extra[0] === 1) novos[1] = true;
 
-    // desbloqueia Tema 3 Extra se Tema 2 Comum estiver 100%
-    if (progresso.comum[1] === 1) novos[2] = true;
+    // desbloqueia Tema 3 Extra se Tema 2 (comum + extra) estiver completo
+    if (progresso.comum[1] === 1 && progresso.extra[1] === 1) novos[2] = true;
 
     setDesbloqueados(novos);
   }, [progresso]);
