@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect, useNavigation, useRoute } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
-import React, { useRef, useState, useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
     Alert,
     Image,
@@ -17,25 +17,25 @@ import {
     findNodeHandle,
 } from "react-native";
 
-const BlocoPraticaComum = React.forwardRef(({ titulo, subtitulo, storageKey }, ref) => {
+const BlocoPraticaComum = React.forwardRef(({ titulo, subtitulo, storageKey, descricaoTitulo, descricaoTexto }, ref) => {
     const navigation = useNavigation();
-    const [concluida, setConcluida] = useState(false);
     const [imagemSelecionada, setImagemSelecionada] = useState(null);
     const [opcoesVisiveis, setOpcoesVisiveis] = useState(null);
     const [imagensUsuario, setImagensUsuario] = useState({
-        limpeza: [null, null, null],
-        secagem: [null, null, null],
-        separacao: [null, null, null],
+        maiorConsumo: [null, null, null],
+        consumoMedio: [null, null, null],
+        baixoConsumo: [null, null, null],
     });
 
     const atualizarProgresso = async (novoEstado) => {
         try {
             let progresso = 0;
 
+            // Atualize os tópicos para refletir as novas chaves
             const topicosPreenchidos = [
-                novoEstado.limpeza.some((img) => img !== null),
-                novoEstado.secagem.some((img) => img !== null),
-                novoEstado.separacao.some((img) => img !== null),
+                novoEstado.maiorConsumo?.some((img) => img !== null),
+                novoEstado.consumoMedio?.some((img) => img !== null),
+                novoEstado.baixoConsumo?.some((img) => img !== null),
             ];
 
             const totalPreenchidos = topicosPreenchidos.filter(Boolean).length;
@@ -49,7 +49,6 @@ const BlocoPraticaComum = React.forwardRef(({ titulo, subtitulo, storageKey }, r
             console.log("Erro ao salvar progresso:", e);
         }
     };
-
 
     const escolherImagem = async (topico, index) => {
         try {
@@ -112,72 +111,88 @@ const BlocoPraticaComum = React.forwardRef(({ titulo, subtitulo, storageKey }, r
                         <Text style={styles.textoSuperior}>{titulo}</Text>
                         <Text style={styles.textoInferior}>{subtitulo}</Text>
                     </View>
-                    <View style={[styles.barraVertical, { backgroundColor: "#4CAF50" }]} />
-                    <TouchableOpacity onPress={() => setConcluida(!concluida)}>
-                        <Ionicons
-                            name={concluida ? "checkbox" : "checkbox-outline"}
-                            size={30}
-                            color={concluida ? "#4CAF50" : "black"}
-                        />
-                    </TouchableOpacity>
                 </View>
             </View>
 
             {/* ===== CONTEÚDO ===== */}
             <View style={styles.caixaVerde}>
-                <Text style={styles.tituloVerde}>
-                    APRENDA COMO SEPARAR O SEU LIXO DE PLÁSTICO
-                </Text>
+                <Text style={styles.tituloVerde}>{descricaoTitulo}</Text>
 
                 <View style={styles.caixaBranca}>
-                    <Text style={styles.textoBrancoCaixa2}>
-                        <Text style={styles.negrito}>1 - Limpeza{"\n"}</Text>
-                        Lave os plásticos para remover resíduos de alimentos ou produtos.{"\n\n"}
-                        <Text style={styles.negrito}>2 - Secagem{"\n"}</Text>
-                        Seque bem antes de descartar para evitar contaminação.{"\n\n"}
-                        <Text style={styles.negrito}>3 - Separação{"\n"}</Text>
-                        Separe os plásticos dos demais resíduos e utilize a lixeira vermelha.
-                    </Text>
+                    <Text style={styles.textoBrancoCaixa2}>{descricaoTexto}</Text>
                 </View>
 
                 <Text style={styles.tituloProgresso}>SEU PROGRESSO</Text>
 
                 {/* ===== UPLOAD DAS IMAGENS ===== */}
                 <View style={styles.caixaBranca}>
-                    {["limpeza", "secagem", "separacao"].map((topico) => (
-                        <View key={topico}>
-                            <Text style={styles.topico}>
-                                <Text style={styles.negrito}>
-                                    {topico.charAt(0).toUpperCase() + topico.slice(1)}
-                                </Text>
-                            </Text>
+                    {["maiorConsumo", "consumoMedio", "baixoConsumo"].map((topico) => {
+                        // Define os títulos dos tópicos conforme o tema (descricaoTitulo)
+                        let tituloTopico = "";
+                        switch (descricaoTitulo) {
+                            case "Mão na massa: Desligue o Standby":
+                                tituloTopico =
+                                    topico === "maiorConsumo"
+                                        ? "Maior Consumo (E-F)"
+                                        : topico === "consumoMedio"
+                                            ? "Consumo Médio (C-D)"
+                                            : "Baixo Consumo (A-B)";
+                                break;
 
-                            <ScrollView
-                                horizontal
-                                showsHorizontalScrollIndicator={false}
-                                style={styles.scrollHorizontal}
-                            >
-                                {imagensUsuario[topico].map((img, index) => (
-                                    <TouchableOpacity
-                                        key={`${topico}-${index}`}
-                                        onPress={() =>
-                                            img
-                                                ? abrirOpcoesImagem(img, topico, index)
-                                                : escolherImagem(topico, index)
-                                        }
-                                    >
-                                        {img ? (
-                                            <Image source={{ uri: img }} style={styles.quadradoImagem} />
-                                        ) : (
-                                            <View style={styles.quadradoCinza}>
-                                                <Ionicons name="add" size={36} color="#777" />
-                                            </View>
-                                        )}
-                                    </TouchableOpacity>
-                                ))}
-                            </ScrollView>
-                        </View>
-                    ))}
+                            case "Roupas também 'bebem' água":
+                                tituloTopico =
+                                    topico === "maiorConsumo"
+                                        ? "Roupas para doar"
+                                        : topico === "consumoMedio"
+                                            ? "Roupas para customizar"
+                                            : "Roupas para trocar ou vender";
+                                break;
+
+                            case "Vida Nova às Coisas Velhas":
+                                tituloTopico =
+                                    topico === "maiorConsumo"
+                                        ? "Transforme embalagens"
+                                        : topico === "consumoMedio"
+                                            ? "Reaproveite móveis e objetos"
+                                            : "Reutilize tecidos em pequenas criações";
+                                break;
+
+                            default:
+                                tituloTopico = topico;
+                        }
+                        return (
+                            <View key={topico}>
+                                <Text style={styles.topico}>
+                                    <Text style={styles.negrito}>{tituloTopico}</Text>
+                                </Text>
+
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    style={styles.scrollHorizontal}
+                                >
+                                    {(imagensUsuario[topico] || []).map((img, index) => (
+                                        <TouchableOpacity
+                                            key={`${topico}-${index}`}
+                                            onPress={() =>
+                                                img
+                                                    ? abrirOpcoesImagem(img, topico, index)
+                                                    : escolherImagem(topico, index)
+                                            }
+                                        >
+                                            {img ? (
+                                                <Image source={{ uri: img }} style={styles.quadradoImagem} />
+                                            ) : (
+                                                <View style={styles.quadradoCinza}>
+                                                    <Ionicons name="add" size={36} color="#777" />
+                                                </View>
+                                            )}
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
+                            </View>
+                        );
+                    })}
                 </View>
             </View>
 
@@ -341,12 +356,22 @@ export default function PraticaComum() {
             style={styles.container}
             contentContainerStyle={{ paddingBottom: 60 }}
         >
-            {/* ===== Prática 1 (sempre desbloqueada) ===== */}
             <BlocoPraticaComum
                 ref={blocosRefs[0]}
                 titulo="Prática 1"
                 subtitulo="Tema 01"
                 storageKey="pratica1"
+                descricaoTitulo="Mão na massa: Desligue o Standby"
+                descricaoTexto={
+                    <Text style={styles.textoBrancoCaixa2}>
+                        Mesmo “desligados”, muitos aparelhos continuam gastando energia — esse é o{" "}
+                        <Text style={styles.negrito}>modo standby</Text>, que pode representar até{" "}
+                        <Text style={styles.negrito}>12% da conta de luz</Text>. Luzinhas acesas e sensores ativos
+                        são sinais de que o consumo continua. Desconectar da tomada o que não está em uso é uma
+                        atitude simples que economiza energia e reduz emissões de carbono. Inspire-se no{" "}
+                        <Text style={styles.negrito}>Selo ENCE</Text> (de A a F) e veja onde agir primeiro:
+                    </Text>
+                }
             />
 
             {/* ===== Prática 2 ===== */}
@@ -356,6 +381,16 @@ export default function PraticaComum() {
                     titulo="Prática 2"
                     subtitulo="Tema 02"
                     storageKey="pratica2"
+                    descricaoTitulo="Roupas também 'bebem' água"
+                    descricaoTexto={
+                        <Text style={styles.textoBrancoCaixa2}>
+                            Você sabia que uma única camiseta de algodão pode usar <Text style={styles.negrito}>mais de 2.500 litros</Text>{" "}
+                            de água para ser produzida? Isso inclui o cultivo do algodão, a fabricação e o {" "}
+                            transporte. Nesta prática, o desafio é olhar para o seu armário e perceber quanta água {" "}
+                            está guardada lá dentro, parada em roupas que quase nunca são usadas. Ao dar um novo{" "}
+                            destino a elas, você reduz o desperdício e ajuda a valorizar cada gota envolvida nesse processo.
+                        </Text>
+                    }
                 />
 
                 {!desbloqueados[1] && (
@@ -374,6 +409,14 @@ export default function PraticaComum() {
                     titulo="Prática 3"
                     subtitulo="Tema 03"
                     storageKey="pratica3"
+                    descricaoTitulo="Vida Nova às Coisas Velhas"
+                    descricaoTexto={
+                        <Text style={styles.textoBrancoCaixa2}>
+                            Trazer a natureza para dentro de casa não é só sobre plantas — é sobre dar nova vida ao {" "}
+                            que já existe. A reciclagem criativa transforma resíduos em objetos úteis e bonitos, reduzindo{" "}
+                             o desperdício e fortalecendo nossa conexão com o meio ambiente.
+                        </Text>
+                    }
                 />
 
                 {!desbloqueados[2] && (
@@ -407,7 +450,6 @@ const styles = StyleSheet.create({
     textosCaixa1: { flex: 1, marginHorizontal: 10 },
     textoSuperior: { fontSize: 20, fontWeight: "bold", color: "#4CAF50" },
     textoInferior: { fontSize: 17, color: "#333" },
-    barraVertical: { width: 5, height: 65, borderRadius: 3, marginHorizontal: 10 },
     caixaVerde: { backgroundColor: "#4CAF50", borderRadius: 12, padding: 20 },
     tituloVerde: { color: "#FFF", fontSize: 20, fontWeight: "bold", textAlign: "center", marginBottom: 15 },
     caixaBranca: { backgroundColor: "#FFF", borderRadius: 12, padding: 15, marginBottom: 20 },
@@ -447,5 +489,4 @@ const styles = StyleSheet.create({
         textAlign: "center",
         paddingHorizontal: 10,
     },
-
 });
