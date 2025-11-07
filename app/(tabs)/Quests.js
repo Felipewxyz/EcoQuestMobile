@@ -1,12 +1,58 @@
 import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function Quests() {
   const router = useRouter();
   const pathname = usePathname();
   const params = useLocalSearchParams();
+  const [completedPractices, setCompletedPractices] = useState(0);
+  const [completedThemes, setCompletedThemes] = useState(0);
+
+  useEffect(() => {
+    const carregarTemas = async () => {
+      try {
+        const value = await AsyncStorage.getItem("completedThemes");
+        const num = value ? Number(value) : 0;
+        setCompletedThemes(num);
+        console.log("📘 Valor de temas carregado:", num);
+      } catch (err) {
+        console.log("Erro ao carregar temas:", err);
+      }
+    };
+
+    carregarTemas();
+  }, []);
+
+  // 🔁 sempre que o usuário voltar pra tela, recarrega o progresso salvo
+  useFocusEffect(
+    React.useCallback(() => {
+      const loadProgress = async () => {
+        try {
+          const stored = await AsyncStorage.getItem("completedPractices");
+          const value = stored ? Number(stored) : 0;
+          setCompletedPractices(value);
+          console.log("📗 Valor carregado do AsyncStorage:", value);
+        } catch (err) {
+          console.log("Erro ao carregar progresso:", err);
+        }
+      };
+      loadProgress();
+    }, [])
+  );
+
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      const value = await AsyncStorage.getItem("completedThemes");
+      const num = value ? Number(value) : 0;
+      setCompletedThemes(num);
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const imagesList = [
     require("../../assets/images/AnoNovoPlanetaNovo.png"),
@@ -150,8 +196,8 @@ export default function Quests() {
               {isCurrent
                 ? remainingText
                 : isFuture
-                ? "Seu desafio ainda vai começar"
-                : "Tempo esgotado"}
+                  ? "Seu desafio ainda vai começar"
+                  : "Tempo esgotado"}
             </Text>
           </View>
 
@@ -196,19 +242,60 @@ export default function Quests() {
           <>
             <Text style={styles.dailyTitle}>Quests Diárias</Text>
             <View style={styles.questsBox}>
-              {[1, 2, 3].map((_, i) => (
-                <View key={i} style={styles.questProgressContainer}>
-                  <View style={styles.textRow}>
-                    <Ionicons name="leaf-outline" size={28} color="#1E90FF" style={styles.icon} />
-                    <Text style={styles.questDescription}>Complete 2 práticas</Text>
-                  </View>
-                  <View style={styles.progressOuter}>
-                    <View style={[styles.progressInner, { width: "50%" }]} />
-                    <Text style={styles.progressText}>01/02</Text>
-                  </View>
-                  {i < 2 && <View style={styles.separator} />}
+              {/* 🌿 trecho do JSX (substitua sua primeira quest por esse) */}
+              <View style={styles.questProgressContainer}>
+                <View style={styles.textRow}>
+                  <Ionicons name="barbell-outline" size={28} color="#1E90FF" style={styles.icon} />
+                  <Text style={styles.questDescription}>Complete 2 práticas</Text>
                 </View>
-              ))}
+
+                <View style={styles.progressOuter}>
+                  <View
+                    style={[
+                      styles.progressInner,
+                      { width: `${(completedPractices / 2) * 100}%` },
+                    ]}
+                  />
+                  <Text style={styles.progressText}>
+                    {String(completedPractices).padStart(2, "0")}/02
+                  </Text>
+                </View>
+
+                <View style={styles.separator} />
+              </View>
+
+              {/* 2️⃣ Segunda Quest */}
+              <View style={styles.questProgressContainer}>
+                <View style={styles.textRow}>
+                  <Image
+                    source={require("../../assets/images/folhaazul.png")}
+                    style={[styles.icon, { width: 28, height: 28, tintColor: "#1E90FF" }]}
+                  />
+                  <Text style={styles.questDescription}>Ganhe 25 EPs</Text>
+                </View>
+                <View style={styles.progressOuter}>
+                  <View style={[styles.progressInner, { width: `${(18 / 25) * 100}%` }]} />
+                  <Text style={styles.progressText}>18/25</Text>
+                </View>
+                <View style={styles.separator} />
+              </View>
+
+              {/* 3️⃣ Terceira Quest */}
+              <View style={styles.questProgressContainer}>
+                <View style={styles.textRow}>
+                  <Ionicons name="barbell-outline" size={28} color="#1E90FF" style={styles.icon} />
+                  <Text style={styles.questDescription}>Complete 1 tema</Text>
+                </View>
+                <View style={styles.progressOuter}>
+                  <View
+                    style={[
+                      styles.progressInner,
+                      { width: `${(completedThemes / 1) * 100}%` },
+                    ]}
+                  />
+                  <Text style={styles.progressText}>{`${completedThemes}/1`}</Text>
+                </View>
+              </View>
             </View>
           </>
         ) : (

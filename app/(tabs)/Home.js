@@ -6,13 +6,13 @@ import {
   Animated,
   findNodeHandle,
   Image,
+  InteractionManager,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   UIManager,
   View,
-  InteractionManager,
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
@@ -35,8 +35,28 @@ export default function Home() {
     extra: [0, 0, 0],
   });
 
+  // barra de Complete 2 práticas
+  const [barraPraticasCompleta, setBarraPraticasCompleta] = useState(false);
+  // barra de Complete 1 tema
+  const [barraTemaCompleta, setBarraTemaCompleta] = useState(false);
+
   // controle de temas desbloqueados
   const [desbloqueados, setDesbloqueados] = useState([true, false, false]);
+
+  // 🧹 Limpa o progresso de Quests toda vez que o app inicia
+  useEffect(() => {
+    const limparProgresso = async () => {
+      try {
+        await AsyncStorage.removeItem("completedPractices");
+        await AsyncStorage.removeItem("completedThemes");
+        console.log("🧼 Progresso de Quests resetado ao iniciar o app");
+      } catch (err) {
+        console.log("Erro ao limpar progresso de Quests:", err);
+      }
+    };
+
+    limparProgresso();
+  }, []);
 
   // animValues separados por tipo e tema
   const animValues = useRef({
@@ -113,6 +133,69 @@ export default function Home() {
     setDesbloqueados(novosDesbloqueios);
   }, [progresso]);
 
+  // 👉 ADICIONE AQUI ESTA FUNÇÃO 👇
+  const handlePracticeComplete = async () => {
+    try {
+      const stored = await AsyncStorage.getItem("completedPractices");
+      const current = stored ? Number(stored) : 0;
+
+      if (current < 2) {
+        const newValue = current + 1;
+        await AsyncStorage.setItem("completedPractices", String(newValue));
+        console.log("✅ Progresso salvo:", newValue);
+      } else {
+        console.log("🟩 Já completou as 2 práticas!");
+      }
+    } catch (err) {
+      console.log("Erro ao salvar progresso:", err);
+    }
+  };
+
+  // ================= Contar práticas completas (para a tela Quests) =================
+  useEffect(() => {
+    const atualizarProgressoQuests = async () => {
+      try {
+        const totalCompletas =
+          progresso.comum.filter((p) => p === 1).length +
+          progresso.extra.filter((p) => p === 1).length;
+
+        const valorFinal = totalCompletas >= 2 ? 2 : totalCompletas;
+
+        await AsyncStorage.setItem("completedPractices", String(valorFinal));
+        console.log("🔥 Progresso de quests atualizado:", valorFinal);
+      } catch (err) {
+        console.log("Erro ao atualizar progresso de Quests:", err);
+      }
+    };
+
+    atualizarProgressoQuests();
+  }, [progresso]);
+
+  // ================= Contar temas completos (para a tela Quests) =================
+  useEffect(() => {
+    const atualizarProgressoTemas = async () => {
+      try {
+        // Conta quantos temas estão completos (prática comum + extra = 1)
+        let temasCompletos = 0;
+        for (let i = 0; i < progresso.comum.length; i++) {
+          if (progresso.comum[i] === 1 && progresso.extra[i] === 1) {
+            temasCompletos++;
+          }
+        }
+
+        // Queremos apenas saber se 1 tema foi concluído (para a quest)
+        const valorFinal = temasCompletos >= 1 ? 1 : 0;
+
+        await AsyncStorage.setItem("completedThemes", String(valorFinal));
+        console.log("🌿 Progresso de temas atualizado:", valorFinal);
+      } catch (err) {
+        console.log("Erro ao atualizar progresso de temas:", err);
+      }
+    };
+
+    atualizarProgressoTemas();
+  }, [progresso]);
+
   // ================= Scroll automático =================
   useFocusEffect(
     React.useCallback(() => {
@@ -130,7 +213,7 @@ export default function Home() {
               UIManager.measureLayout(
                 nodeHandle,
                 scrollHandle,
-                () => {},
+                () => { },
                 (x, y) => {
                   scrollViewRef.current.scrollTo({ y: y - 40, animated: true });
                 }
