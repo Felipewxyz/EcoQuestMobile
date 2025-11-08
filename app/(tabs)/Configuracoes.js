@@ -1,17 +1,17 @@
-import { useNavigation } from "@react-navigation/native"; 
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation } from "@react-navigation/native";
 import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Dimensions,
   Easing,
   Image,
+  ScrollView,
   StyleSheet,
+  Text,
   TouchableOpacity,
   View,
-  Text,
-  ScrollView,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const { width } = Dimensions.get("window");
 
@@ -127,6 +127,30 @@ export default function Configuracoes() {
     }
   };
 
+  // 🔹 Salva apenas o banner e vai direto pro Perfil
+  const handleSalvarBannerDireto = async () => {
+    try {
+      if (selectedBanner) {
+        await AsyncStorage.setItem(
+          "bannerSelecionado",
+          JSON.stringify({ type: "banner", value: selectedBanner })
+        );
+      } else if (selectedColor) {
+        await AsyncStorage.setItem(
+          "bannerSelecionado",
+          JSON.stringify({ type: "color", value: selectedColor })
+        );
+      } else {
+        alert("Selecione um banner ou uma cor primeiro!");
+        return;
+      }
+
+      navigation.navigate("Perfil");
+    } catch (error) {
+      console.log("Erro ao salvar banner direto:", error);
+    }
+  };
+
   const handleSelecionarBanner = (item) => {
     setSelectedBanner(item.uri);
     setSelectedColor(null);
@@ -160,8 +184,52 @@ export default function Configuracoes() {
   const selectedItem = selectedBanner
     ? { type: "banner", value: selectedBanner }
     : selectedColor
-    ? { type: "color", value: selectedColor }
-    : null;
+      ? { type: "color", value: selectedColor }
+      : null;
+
+  // 🔹 Salva apenas o banner (imagem ou cor)
+  const handleSalvarBanner = async () => {
+    try {
+      if (selectedBanner) {
+        await AsyncStorage.setItem(
+          "bannerSelecionado",
+          JSON.stringify({ type: "banner", value: selectedBanner })
+        );
+      } else if (selectedColor) {
+        await AsyncStorage.setItem(
+          "bannerSelecionado",
+          JSON.stringify({ type: "color", value: selectedColor })
+        );
+      } else {
+        alert("Selecione um banner ou uma cor primeiro!");
+        return;
+      }
+
+      navigation.navigate("Perfil");
+    } catch (error) {
+      console.log("Erro ao salvar banner:", error);
+    }
+  };
+
+  // 🔹 Salva apenas a moldura e/ou borda
+  const handleSalvarMoldura = async () => {
+    try {
+      if (selectedFrame || selectedBorderColor) {
+        await AsyncStorage.setItem(
+          "molduraSelecionada",
+          JSON.stringify({
+            frame: selectedFrame,
+            borderColor: selectedBorderColor,
+          })
+        );
+        navigation.navigate("Perfil");
+      } else {
+        alert("Selecione uma moldura ou cor de borda primeiro!");
+      }
+    } catch (error) {
+      console.log("Erro ao salvar moldura/borda:", error);
+    }
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ alignItems: "center", paddingBottom: 80 }}>
@@ -237,21 +305,36 @@ export default function Configuracoes() {
         </View>
       </View>
 
+      {/* 🔹 Botão Salvar Banner */}
+      <View style={{ marginBottom: 50 }}>
+      <TouchableOpacity
+        style={styles.saveBannerButton}
+        onPress={handleSalvarBanner}  // ✅ use a função que já existe
+      >
+        <Text style={styles.saveBannerButtonText}>Salvar banner</Text>
+      </TouchableOpacity>
+      </View>
+
       {/* 🔹 Moldura */}
       <View style={styles.framePreviewContainer}>
-        <Animated.View
-          style={[
-            styles.frameCircle,
-            selectedBorderColor && { borderColor: selectedBorderColor, borderWidth: 5 },
-            { transform: [{ scale: frameScale }] },
-          ]}
-        >
-          <Image source={require("../../assets/images/perfilplaceholder.png")} style={styles.profileImage} />
-          {selectedFrame && <Image source={selectedFrame.uri} style={styles.molduraPreviewImage} resizeMode="contain" />}
-        </Animated.View>
+        {/* 🔹 Foto de perfil */}
+        <Image
+          source={require("../../assets/images/perfilplaceholder.png")}
+          style={styles.profileImage}
+        />
+
+        {/* 🔹 Moldura por cima e fora da foto */}
+        {selectedFrame && (
+          <Image
+            source={selectedFrame.uri}
+            style={styles.frameOutside}   // estilo igual ao perfil
+            resizeMode="contain"
+          />
+        )}
 
         <Text style={styles.previewLabel}>Como sua moldura está</Text>
       </View>
+
 
       {/* 🔹 Molduras */}
       <View style={styles.section}>
@@ -288,9 +371,9 @@ export default function Configuracoes() {
       </View>
 
       {/* 🔹 Botões */}
-      <View style={styles.buttonRow}>
-        <TouchableOpacity style={styles.saveButton} onPress={handleSalvar}>
-          <Text style={styles.saveButtonText}>Salvar</Text>
+      <View style={{ flexDirection: 'column', gap: 10 }}>
+        <TouchableOpacity style={styles.saveButton} onPress={handleSalvarMoldura}>
+          <Text style={styles.saveButtonText}>Salvar moldura/borda</Text>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.removeButton} onPress={handleRetirarMoldura}>
@@ -352,6 +435,7 @@ const styles = StyleSheet.create({
     width: 130,
     height: 130,
     borderRadius: 65,
+    marginBottom: 20,
   },
   molduraPreviewImage: {
     position: "absolute",
@@ -376,10 +460,10 @@ const styles = StyleSheet.create({
   },
 
   buttonRow: {
-    flexDirection: "row",
+    flexDirection: "column",
     justifyContent: "center",
     alignItems: "center",
-    gap: 15,
+    gap: 10,
     marginTop: 40,
   },
   saveButton: {
@@ -396,4 +480,41 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   removeButtonText: { color: "#FFF", fontSize: 16, fontWeight: "bold" },
+  topSaveContainer: {
+    width: "90%",
+    alignItems: "center",
+    marginTop: 10,
+  },
+  topSaveButton: {
+    backgroundColor: "#0D47A1",
+    paddingVertical: 12,
+    paddingHorizontal: 40,
+    borderRadius: 8,
+  },
+  topSaveButtonText: {
+    color: "#FFF",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  saveBannerButton: {
+    backgroundColor: "#4CAF50",  // cor de fundo do botão
+    paddingVertical: 12,          // altura do botão
+    paddingHorizontal: 20,        // largura interna
+    borderRadius: 8,              // borda arredondada
+    alignItems: "center",         // centraliza o texto
+    marginTop: 10,                // distância do elemento acima
+  },
+  saveBannerButtonText: {
+    color: "#fff",                // cor do texto
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  frameOutside: {
+    position: "absolute",
+    width: 225,
+    height: 225,
+    top: -58,
+    left: -10,
+    zIndex: 3,
+  },
 });

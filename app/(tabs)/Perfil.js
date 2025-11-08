@@ -1,5 +1,8 @@
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
 import { useRouter } from "expo-router";
+import { useCallback, useState } from "react";
 import {
   Image,
   Pressable,
@@ -8,9 +11,6 @@ import {
   Text,
   View,
 } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
-import { useCallback, useState } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function Perfil() {
   const router = useRouter();
@@ -70,9 +70,9 @@ export default function Perfil() {
         {/* Container do perfil com moldura para fora */}
         <View style={styles.profileWrapper}>
           {/* Moldura decorativa para fora da foto */}
-          {frameData?.type === "moldura" && frameData.value && (
+          {frameData?.frame && (
             <Image
-              source={frameData.value}
+              source={frameData.frame.uri}
               style={styles.frameOutside}
               resizeMode="contain"
             />
@@ -82,12 +82,13 @@ export default function Perfil() {
           <View
             style={[
               styles.profileCircle,
-              frameData?.type === "borda" && {
-                borderColor: frameData.value,
+              frameData?.borderColor && {
+                borderColor: frameData.borderColor,
                 borderWidth: 5,
               },
             ]}
           >
+
             <Image
               source={require("../../assets/images/perfilplaceholder.png")}
               style={styles.profileImage}
@@ -171,7 +172,9 @@ const styles = StyleSheet.create({
   },
   banner: {
     width: "100%",
-    height: 300,
+    height: 285,
+    alignSelf: "center",
+    overflow: "hidden",
     backgroundColor: "#B4E197",
   },
   greenSection: {
@@ -183,7 +186,6 @@ const styles = StyleSheet.create({
     paddingRight: 20,
     marginTop: -70,
   },
-
   // Novo container para foto + moldura
   profileWrapper: {
     position: "absolute",
@@ -195,7 +197,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     zIndex: 5,
   },
-
   profileCircle: {
     width: 140,
     height: 140,
@@ -205,19 +206,20 @@ const styles = StyleSheet.create({
     borderColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
+    overflow: "hidden",
     zIndex: 2,
-    overflow: "hidden", // para a foto não sair do círculo
   },
   profileImage: {
-    width: 130,
+    width: 130,   // 👈 deve ser ligeiramente menor que o círculo branco
     height: 130,
     borderRadius: 65,
   },
   frameOutside: {
     position: "absolute",
-    width: 200,
-    height: 200,
-    top: -30,
+    width: 240,          // 🔹 mesmo tamanho da moldura do perfil
+    height: 240,
+    top: -40,            // 🔹 sobe a moldura um pouco
+    left: -22,           // 🔹 desloca levemente para a esquerda
     zIndex: 3,
   },
   infoBox: {
