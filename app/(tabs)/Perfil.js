@@ -25,8 +25,13 @@ export default function Perfil() {
           const moldura = await AsyncStorage.getItem("molduraSelecionada");
 
           if (banner) setBannerData(JSON.parse(banner));
-          if (moldura) setFrameData(JSON.parse(moldura));
-          else setFrameData(null);
+
+          if (moldura) {
+            const parsed = JSON.parse(moldura);
+            setFrameData(parsed); // já inclui frame, borderColor e profileImage
+          } else {
+            setFrameData(null);
+          }
         } catch (error) {
           console.log("Erro ao carregar configurações:", error);
         }
@@ -90,7 +95,11 @@ export default function Perfil() {
           >
 
             <Image
-              source={require("../../assets/images/perfilplaceholder.png")}
+              source={
+                frameData?.profileImage
+                  ? { uri: frameData.profileImage }
+                  : require("../../assets/images/perfilplaceholder.png")
+              }
               style={styles.profileImage}
             />
           </View>

@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
+import * as ImagePicker from "expo-image-picker";
 import { useEffect, useRef, useState } from "react";
 import {
   Animated,
@@ -10,7 +11,7 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View,
+  View
 } from "react-native";
 
 const { width } = Dimensions.get("window");
@@ -24,6 +25,7 @@ export default function Configuracoes() {
   const [selectedColor, setSelectedColor] = useState(null);
   const [expandedBanners, setExpandedBanners] = useState(false);
   const [expandedColors, setExpandedColors] = useState(false);
+  const [profileImage, setProfileImage] = useState(null);
 
   // 🔹 Moldura e borda
   const [selectedFrame, setSelectedFrame] = useState(null);
@@ -117,13 +119,38 @@ export default function Configuracoes() {
     }
   };
 
+  // função para escolher imagem da galeria
+  const handleEscolherImagemGaleria = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      alert("Permissão para acessar a galeria é necessária!");
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setProfileImage(result.assets[0].uri);
+    }
+  };
+
+  // (você pode implementar handleImagemPronta depois)
+  const handleImagemPronta = () => {
+    alert("Aqui você pode implementar imagens prontas de perfil!");
+  };
+
   const handleRetirarMoldura = async () => {
     try {
       await AsyncStorage.removeItem("molduraSelecionada");
       setSelectedFrame(null);
       setSelectedBorderColor(null);
+      setProfileImage(null); // ✅ limpa imagem escolhida também
     } catch (error) {
-      console.log("Erro ao remover moldura:", error);
+      console.log("Erro ao remover moldura/cor/imagem:", error);
     }
   };
 
@@ -211,23 +238,25 @@ export default function Configuracoes() {
     }
   };
 
-  // 🔹 Salva apenas a moldura e/ou borda
+  // 🔹 Salva moldura, borda e imagem de perfil
   const handleSalvarMoldura = async () => {
     try {
-      if (selectedFrame || selectedBorderColor) {
+      if (selectedFrame || selectedBorderColor || profileImage) {
         await AsyncStorage.setItem(
           "molduraSelecionada",
           JSON.stringify({
             frame: selectedFrame,
             borderColor: selectedBorderColor,
+            profileImage: profileImage, // ✅ salva também a imagem escolhida
           })
         );
+
         navigation.navigate("Perfil");
       } else {
-        alert("Selecione uma moldura ou cor de borda primeiro!");
+        alert("Selecione uma moldura, cor ou imagem primeiro!");
       }
     } catch (error) {
-      console.log("Erro ao salvar moldura/borda:", error);
+      console.log("Erro ao salvar moldura/cor/imagem:", error);
     }
   };
 
@@ -307,34 +336,65 @@ export default function Configuracoes() {
 
       {/* 🔹 Botão Salvar Banner */}
       <View style={{ marginBottom: 50 }}>
-      <TouchableOpacity
-        style={styles.saveBannerButton}
-        onPress={handleSalvarBanner}  // ✅ use a função que já existe
-      >
-        <Text style={styles.saveBannerButtonText}>Salvar banner</Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.saveBannerButton}
+          onPress={handleSalvarBanner}  // ✅ use a função que já existe
+        >
+          <Text style={styles.saveBannerButtonText}>Salvar banner</Text>
+        </TouchableOpacity>
       </View>
-
-      {/* 🔹 Moldura */}
+      {/* 🔹 Preview da Moldura e/ou Borda */}
       <View style={styles.framePreviewContainer}>
-        {/* 🔹 Foto de perfil */}
-        <Image
-          source={require("../../assets/images/perfilplaceholder.png")}
-          style={styles.profileImage}
-        />
+        <View
+          style={[
+            styles.borderCircle,
+            selectedBorderColor && { borderColor: selectedBorderColor, borderWidth: 6 },
+          ]}
+        >
+          {/* 🔹 Foto de perfil (galeria ou placeholder) */}
+          <Image
+            source={
+              profileImage
+                ? { uri: profileImage }
+                : require("../../assets/images/perfilplaceholder.png")
+            }
+            style={styles.profileImage}
+          />
+        </View>
 
-        {/* 🔹 Moldura por cima e fora da foto */}
+        {/* 🔹 Moldura fora do círculo */}
         {selectedFrame && (
           <Image
             source={selectedFrame.uri}
-            style={styles.frameOutside}   // estilo igual ao perfil
+            style={styles.frameOutside}
             resizeMode="contain"
           />
         )}
 
-        <Text style={styles.previewLabel}>Como sua moldura está</Text>
-      </View>
+        <Text style={styles.previewLabel}>Como seu perfil está</Text>
 
+        {/* 🔹 Texto adicional */}
+        <Text style={styles.chooseText}>
+          ESCOLHA SUA IMAGEM DE PERFIL
+        </Text>
+
+        {/* 🔹 Botões lado a lado */}
+        <View style={styles.imageButtonRow}>
+          <TouchableOpacity
+            style={[styles.imageButton, { backgroundColor: "#0D47A1" }]}
+            onPress={handleEscolherImagemGaleria}
+          >
+            <Text style={styles.imageButtonText}>Imagem da Galeria</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.imageButton, { backgroundColor: "#4CAF50" }]}
+            onPress={handleImagemPronta}
+          >
+            <Text style={styles.imageButtonText}>Imagem Pronta</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
 
       {/* 🔹 Molduras */}
       <View style={styles.section}>
@@ -370,14 +430,14 @@ export default function Configuracoes() {
         </View>
       </View>
 
-      {/* 🔹 Botões */}
-      <View style={{ flexDirection: 'column', gap: 10 }}>
-        <TouchableOpacity style={styles.saveButton} onPress={handleSalvarMoldura}>
-          <Text style={styles.saveButtonText}>Salvar moldura/borda</Text>
+      {/* 🔹 Botões finais */}
+      <View style={styles.bottomButtonsRow}>
+        <TouchableOpacity style={[styles.saveButton, { flex: 1 }]} onPress={handleSalvarMoldura}>
+          <Text style={styles.saveButtonText}>Salvar moldura, cor ou imagem</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.removeButton} onPress={handleRetirarMoldura}>
-          <Text style={styles.removeButtonText}>Retirar moldura/borda</Text>
+        <TouchableOpacity style={[styles.removeButton, { flex: 1 }]} onPress={handleRetirarMoldura}>
+          <Text style={styles.removeButtonText}>Retirar moldura, cor ou imagem</Text>
         </TouchableOpacity>
       </View>
     </ScrollView>
@@ -390,7 +450,6 @@ const styles = StyleSheet.create({
   bannerImage: { width: width, height: 220, borderRadius: 8 },
   dotsContainer: { position: "absolute", bottom: 10, left: 0, right: 0, flexDirection: "row", justifyContent: "center" },
   dot: { width: 10, height: 10, borderRadius: 5, marginHorizontal: 6 },
-
   previewContainer: { width: "100%", alignItems: "center", marginTop: 20, marginBottom: 25 },
   previewBox: {
     width: "90%",
@@ -405,23 +464,25 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   previewImage: { width: "100%", height: "100%", borderRadius: 14 },
-  previewLabel: { marginTop: 10, fontSize: 16, fontWeight: "600", color: "#333" },
-
   section: { width: "90%", marginTop: 30 },
   sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
   sectionTitle: { fontSize: 18, fontWeight: "600", color: "#0D47A1" },
   arrow: { fontSize: 18, color: "#0D47A1" },
-
   bannerRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
   bannerOption: { width: "48%", marginBottom: 10 },
   bannerThumb: { width: "100%", height: 100, borderRadius: 8 },
-
   colorsGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
   colorOption: { width: "22%", height: 60, borderRadius: 8, marginBottom: 10 },
   selectedItem: { borderWidth: 3, borderColor: "#0D47A1" },
-
   // Molduras
-  framePreviewContainer: { alignItems: "center", marginTop: 40 },
+  framePreviewContainer: {
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 40,
+    width: 230,
+    height: "auto",
+    position: "relative",
+  },
   frameCircle: {
     width: 160,
     height: 160,
@@ -435,7 +496,7 @@ const styles = StyleSheet.create({
     width: 130,
     height: 130,
     borderRadius: 65,
-    marginBottom: 20,
+    zIndex: 1,
   },
   molduraPreviewImage: {
     position: "absolute",
@@ -443,6 +504,16 @@ const styles = StyleSheet.create({
     height: 170,
     borderRadius: 85,
     zIndex: 10,
+  },
+  borderCircle: {
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    position: "relative",
+    zIndex: 2,
   },
   frameOption: {
     width: "48%",
@@ -466,20 +537,6 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 40,
   },
-  saveButton: {
-    backgroundColor: "#0D47A1",
-    paddingVertical: 14,
-    paddingHorizontal: 35,
-    borderRadius: 8,
-  },
-  saveButtonText: { color: "#FFF", fontSize: 18, fontWeight: "bold" },
-  removeButton: {
-    backgroundColor: "#E53935",
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-  },
-  removeButtonText: { color: "#FFF", fontSize: 16, fontWeight: "bold" },
   topSaveContainer: {
     width: "90%",
     alignItems: "center",
@@ -505,16 +562,88 @@ const styles = StyleSheet.create({
     marginTop: 10,                // distância do elemento acima
   },
   saveBannerButtonText: {
-    color: "#fff",                // cor do texto
+    color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
   },
   frameOutside: {
     position: "absolute",
-    width: 225,
-    height: 225,
+    width: 265,
+    height: 265,
     top: -58,
-    left: -10,
+    right: -25,
     zIndex: 3,
+  },
+  previewLabel: {
+    marginTop: 45,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333"
+  },
+  chooseText: {
+    marginTop: 25,
+    fontSize: 15,
+    fontWeight: "bold",
+    color: "#333",
+    textAlign: "center",
+    letterSpacing: 0.5,
+    width: "90%",
+  },
+  imageButtonRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "130%",
+    marginTop: 15,
+    gap: 15,
+  },
+  imageButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  imageButtonText: {
+    color: "#FFF",
+    fontSize: 15,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  bottomButtonsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "90%",
+    marginTop: 40,
+    marginBottom: 60,
+    gap: 15,
+  },
+  saveButton: {
+    backgroundColor: "#0D47A1",
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  removeButton: {
+    backgroundColor: "#E53935",
+    paddingVertical: 14,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  saveButtonText: {
+    color: "#FFF",
+    fontSize: 14,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  removeButtonText: {
+    color: "#FFF",
+    fontSize: 14,
+    fontWeight: "bold",
+    textAlign: "center",
   },
 });
