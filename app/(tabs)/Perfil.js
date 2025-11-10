@@ -16,6 +16,7 @@ export default function Perfil() {
   const router = useRouter();
   const [bannerData, setBannerData] = useState(null);
   const [frameData, setFrameData] = useState(null); // moldura/borda selecionada
+  const [userInfo, setUserInfo] = useState({ nome: "", usuario: "" });
 
   useFocusEffect(
     useCallback(() => {
@@ -23,6 +24,7 @@ export default function Perfil() {
         try {
           const banner = await AsyncStorage.getItem("bannerSelecionado");
           const moldura = await AsyncStorage.getItem("molduraSelecionada");
+          const userData = await AsyncStorage.getItem("userInfo");
 
           if (banner) setBannerData(JSON.parse(banner));
 
@@ -31,6 +33,11 @@ export default function Perfil() {
             setFrameData(parsed); // já inclui frame, borderColor e profileImage
           } else {
             setFrameData(null);
+          }
+
+          if (userData) {
+            const parsedUser = JSON.parse(userData);
+            setUserInfo(parsedUser);
           }
         } catch (error) {
           console.log("Erro ao carregar configurações:", error);
@@ -107,8 +114,10 @@ export default function Perfil() {
 
         {/* Info do perfil */}
         <View style={styles.infoBox}>
-          <Text style={styles.name}>Brendinha</Text>
-          <Text style={styles.username}>@Brendinha_06</Text>
+          <Text style={styles.name}>{userInfo.nome || "Seu nome"}</Text>
+          <Text style={styles.username}>
+            {userInfo.usuario ? `@${userInfo.usuario}` : "@usuario"}
+          </Text>
 
           <View style={styles.levelRow}>
             <View style={styles.levelContainer}>

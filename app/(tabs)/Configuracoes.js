@@ -11,8 +11,11 @@ import {
   StyleSheet,
   Text,
   TouchableOpacity,
-  View
+  View,
+  TextInput,
+  Alert
 } from "react-native";
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 const { width } = Dimensions.get("window");
 
@@ -32,6 +35,14 @@ export default function Configuracoes() {
   const [selectedBorderColor, setSelectedBorderColor] = useState(null);
   const [expandedFrames, setExpandedFrames] = useState(false);
   const [expandedBorderColors, setExpandedBorderColors] = useState(false);
+
+  // 🔹 Informações pessoais
+  const [nome, setNome] = useState("");
+  const [usuario, setUsuario] = useState("");
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [senhaVisivel, setSenhaVisivel] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   // 🔹 animação na seleção de moldura
   const frameScale = useRef(new Animated.Value(1)).current;
@@ -260,6 +271,57 @@ export default function Configuracoes() {
     }
   };
 
+  // 🔹 Salvar informações pessoais
+  const handleSalvarInfo = async () => {
+    try {
+      const userData = { nome, usuario, email, senha };
+      await AsyncStorage.setItem("userInfo", JSON.stringify(userData));
+      navigation.navigate("Perfil");
+    } catch (error) {
+      console.log("Erro ao salvar informações pessoais:", error);
+    }
+  };
+
+  // 🔹 Confirmar logout
+  const handleConfirmarLogout = async () => {
+    try {
+      await AsyncStorage.clear();
+      setShowLogoutModal(false);
+      navigation.navigate("InitialScreen");
+    } catch (error) {
+      console.log("Erro ao deslogar:", error);
+    }
+  };
+
+  // 🔹 Carregar informações pessoais salvas
+  useEffect(() => {
+    const carregarInfo = async () => {
+      try {
+        const dadosSalvos = await AsyncStorage.getItem("userInfo");
+        if (dadosSalvos) {
+          const { nome, usuario, email } = JSON.parse(dadosSalvos);
+          if (nome) setNome(nome);
+          if (usuario) setUsuario(usuario);
+          if (email) setEmail(email);
+        }
+      } catch (error) {
+        console.log("Erro ao carregar informações pessoais:", error);
+      }
+    };
+
+    carregarInfo();
+  }, []);
+
+  // 🔹 Função para remover banner
+  const handleRetirarBanner = async () => {
+    try {
+      await AsyncStorage.removeItem("bannerSelecionado");
+      Alert.alert("Banner removido", "O banner foi retirado com sucesso.");
+    } catch (error) {
+      console.log("Erro ao remover banner:", error);
+    }
+  };
+
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ alignItems: "center", paddingBottom: 80 }}>
       {/* 🔹 Carrossel */}
@@ -303,15 +365,28 @@ export default function Configuracoes() {
       {/* 🔹 Banners do usuário */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Seus banners</Text>
+          <View style={styles.sectionTitleRow}>
+            <Ionicons name="image-outline" size={26} color="#000" style={{ marginRight: 6 }} />
+            <Text style={[styles.sectionTitle, { color: "#000" }]}>Seus banners</Text>
+          </View>
           <TouchableOpacity onPress={() => setExpandedBanners(!expandedBanners)}>
-            <Text style={styles.arrow}>{expandedBanners ? "▲" : "▼"}</Text>
+            <Text style={[styles.arrow, { color: "#000" }]}>
+              {expandedBanners ? "▲" : "▼"}
+            </Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.bannerRow}>
           {bannersVisiveis.map((item) => (
-            <TouchableOpacity key={item.id} onPress={() => handleSelecionarBanner(item)} style={[styles.bannerOption, selectedBanner === item.uri && styles.selectedItem]} activeOpacity={0.8}>
+            <TouchableOpacity
+              key={item.id}
+              onPress={() => handleSelecionarBanner(item)}
+              style={[
+                styles.bannerOption,
+                selectedBanner === item.uri && styles.selectedItem,
+              ]}
+              activeOpacity={0.8}
+            >
               <Image source={item.uri} style={styles.bannerThumb} />
             </TouchableOpacity>
           ))}
@@ -321,28 +396,49 @@ export default function Configuracoes() {
       {/* 🔹 Cores sólidas */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Cores sólidas</Text>
+          <View style={styles.sectionTitleRow}>
+            <Ionicons name="color-palette-outline" size={26} color="#000" style={{ marginRight: 6 }} />
+            <Text style={[styles.sectionTitle, { color: "#000" }]}>Cores sólidas</Text>
+          </View>
           <TouchableOpacity onPress={() => setExpandedColors(!expandedColors)}>
-            <Text style={styles.arrow}>{expandedColors ? "▲" : "▼"}</Text>
+            <Text style={[styles.arrow, { color: "#000" }]}>
+              {expandedColors ? "▲" : "▼"}
+            </Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.colorsGrid}>
           {coresVisiveis.map((cor, index) => (
-            <TouchableOpacity key={index} onPress={() => handleSelecionarCor(cor)} style={[styles.colorOption, { backgroundColor: cor }, selectedColor === cor && styles.selectedItem]} />
+            <TouchableOpacity
+              key={index}
+              onPress={() => handleSelecionarCor(cor)}
+              style={[
+                styles.colorOption,
+                { backgroundColor: cor },
+                selectedColor === cor && styles.selectedItem,
+              ]}
+            />
           ))}
         </View>
       </View>
 
-      {/* 🔹 Botão Salvar Banner */}
-      <View style={{ marginBottom: 50 }}>
+      {/* Botões Salvar / Retirar Banner */}
+      <View style={styles.bannerButtonsRow}>
         <TouchableOpacity
-          style={styles.saveBannerButton}
-          onPress={handleSalvarBanner}  // ✅ use a função que já existe
+          style={[styles.bannerButton, { backgroundColor: "#4CAF50" }]}
+          onPress={handleSalvarBanner}
         >
-          <Text style={styles.saveBannerButtonText}>Salvar banner</Text>
+          <Text style={styles.bannerButtonText}>Salvar banner</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.bannerButton, { backgroundColor: "#E53935" }]}
+          onPress={handleRetirarBanner}
+        >
+          <Text style={styles.bannerButtonText}>Retirar banner</Text>
         </TouchableOpacity>
       </View>
+
       {/* 🔹 Preview da Moldura e/ou Borda */}
       <View style={styles.framePreviewContainer}>
         <View
@@ -399,16 +495,32 @@ export default function Configuracoes() {
       {/* 🔹 Molduras */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Suas molduras</Text>
+          <View style={styles.sectionTitleRow}>
+            <Ionicons name="person-circle-outline" size={26} color="#000" style={{ marginRight: 6 }} />
+            <Text style={[styles.sectionTitle, { color: "#000" }]}>Suas molduras</Text>
+          </View>
           <TouchableOpacity onPress={() => setExpandedFrames(!expandedFrames)}>
-            <Text style={styles.arrow}>{expandedFrames ? "▲" : "▼"}</Text>
+            <Text style={[styles.arrow, { color: "#000" }]}>
+              {expandedFrames ? "▲" : "▼"}
+            </Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.bannerRow}>
           {moldurasVisiveis.map((item) => (
-            <TouchableOpacity key={item.id} onPress={() => handleSelecionarMoldura(item)} style={[styles.frameOption, selectedFrame?.id === item.id && styles.selectedItem]}>
-              <Image source={item.uri} style={styles.frameThumb} resizeMode="contain" />
+            <TouchableOpacity
+              key={item.id}
+              onPress={() => handleSelecionarMoldura(item)}
+              style={[
+                styles.frameOption,
+                selectedFrame?.id === item.id && styles.selectedItem,
+              ]}
+            >
+              <Image
+                source={item.uri}
+                style={styles.frameThumb}
+                resizeMode="contain"
+              />
             </TouchableOpacity>
           ))}
         </View>
@@ -417,15 +529,28 @@ export default function Configuracoes() {
       {/* 🔹 Cores de borda */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Cores sólidas (borda)</Text>
+          <View style={styles.sectionTitleRow}>
+            <Ionicons name="color-palette-outline" size={26} color="#000" style={{ marginRight: 6 }} />
+            <Text style={[styles.sectionTitle, { color: "#000" }]}>Cores sólidas (borda)</Text>
+          </View>
           <TouchableOpacity onPress={() => setExpandedBorderColors(!expandedBorderColors)}>
-            <Text style={styles.arrow}>{expandedBorderColors ? "▲" : "▼"}</Text>
+            <Text style={[styles.arrow, { color: "#000" }]}>
+              {expandedBorderColors ? "▲" : "▼"}
+            </Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.colorsGrid}>
           {bordasVisiveis.map((cor, index) => (
-            <TouchableOpacity key={index} onPress={() => handleSelecionarBorda(cor)} style={[styles.colorOption, { backgroundColor: cor }, selectedBorderColor === cor && styles.selectedItem]} />
+            <TouchableOpacity
+              key={index}
+              onPress={() => handleSelecionarBorda(cor)}
+              style={[
+                styles.colorOption,
+                { backgroundColor: cor },
+                selectedBorderColor === cor && styles.selectedItem,
+              ]}
+            />
           ))}
         </View>
       </View>
@@ -440,7 +565,103 @@ export default function Configuracoes() {
           <Text style={styles.removeButtonText}>Retirar moldura, cor ou imagem</Text>
         </TouchableOpacity>
       </View>
-    </ScrollView>
+
+      {/* 🔹 Informações Pessoais */}
+      <View style={styles.infoSection}>
+        <View style={styles.infoTitleRow}>
+          <Ionicons name="folder-outline" size={26} color="#000" style={{ marginRight: 8 }} />
+          <Text style={styles.infoTitle}>Informações pessoais</Text>
+        </View>
+
+        <View style={styles.infoBox}>
+          {/* Nome */}
+          <TextInput
+            style={styles.input}
+            placeholder="Nome"
+            placeholderTextColor="#999"
+            value={nome}
+            onChangeText={setNome}
+          />
+
+          {/* Usuário */}
+          <TextInput
+            style={styles.input}
+            placeholder="Usuário"
+            placeholderTextColor="#999"
+            value={usuario}
+            onChangeText={setUsuario}
+          />
+
+          {/* E-mail */}
+          <TextInput
+            style={styles.input}
+            placeholder="E-mail"
+            placeholderTextColor="#999"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+
+          {/* Senha */}
+          <View style={styles.passwordContainer}>
+            <TextInput
+              style={[styles.input, { flex: 1, marginBottom: 0, borderWidth: 0 }]}
+              placeholder="Senha"
+              placeholderTextColor="#999"
+              secureTextEntry={!senhaVisivel}
+              value={senha}
+              onChangeText={setSenha}
+            />
+            <TouchableOpacity onPress={() => setSenhaVisivel(!senhaVisivel)}>
+              <Ionicons name={senhaVisivel ? 'eye-off' : 'eye'} size={22} color="#666" />
+            </TouchableOpacity>
+          </View>
+
+          {/* Botões */}
+          <View style={styles.infoButtonsRow}>
+            <TouchableOpacity
+              style={[styles.infoButton, { backgroundColor: "#4CAF50" }]}
+              onPress={handleSalvarInfo}
+            >
+              <Text style={styles.infoButtonText}>Salvar informações</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.infoButton, { backgroundColor: "#E53935" }]}
+              onPress={() => setShowLogoutModal(true)}
+            >
+              <Text style={styles.infoButtonText}>Deslogar</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* 🔹 Modal de confirmação de logout */}
+        {showLogoutModal && (
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalBox}>
+              <Text style={styles.modalText}>Tem certeza que deseja deslogar?</Text>
+
+              <View style={styles.modalButtonsRow}>
+                <TouchableOpacity
+                  style={[styles.modalButton, { backgroundColor: "#BDBDBD" }]}
+                  onPress={() => setShowLogoutModal(false)}
+                >
+                  <Text style={styles.modalButtonText}>Fechar</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.modalButton, { backgroundColor: "#E53935" }]}
+                  onPress={handleConfirmarLogout}
+                >
+                  <Text style={styles.modalButtonText}>Confirmar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
+      </View>
+    </ScrollView >
   );
 }
 
@@ -466,7 +687,7 @@ const styles = StyleSheet.create({
   previewImage: { width: "100%", height: "100%", borderRadius: 14 },
   section: { width: "90%", marginTop: 30 },
   sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
-  sectionTitle: { fontSize: 18, fontWeight: "600", color: "#0D47A1" },
+  sectionTitle: { fontSize: 20, fontWeight: "600", color: "#0D47A1" },
   arrow: { fontSize: 18, color: "#0D47A1" },
   bannerRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
   bannerOption: { width: "48%", marginBottom: 10 },
@@ -581,13 +802,12 @@ const styles = StyleSheet.create({
     color: "#333"
   },
   chooseText: {
-    marginTop: 25,
-    fontSize: 15,
-    fontWeight: "bold",
+    marginTop: 10,
+    fontSize: 11,
+    fontWeight: "600",
     color: "#333",
     textAlign: "center",
-    letterSpacing: 0.5,
-    width: "90%",
+    letterSpacing: 0.3,
   },
   imageButtonRow: {
     flexDirection: "row",
@@ -619,7 +839,7 @@ const styles = StyleSheet.create({
     gap: 15,
   },
   saveButton: {
-    backgroundColor: "#0D47A1",
+    backgroundColor: "#4CAF50",
     paddingVertical: 14,
     paddingHorizontal: 10,
     borderRadius: 8,
@@ -636,14 +856,153 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     color: "#FFF",
-    fontSize: 14,
+    fontSize: 15, // 👈 aumentei para igualar aos outros
     fontWeight: "bold",
     textAlign: "center",
   },
   removeButtonText: {
     color: "#FFF",
-    fontSize: 14,
+    fontSize: 15, // 👈 mesmo ajuste
     fontWeight: "bold",
     textAlign: "center",
+  },
+  infoSection: {
+    width: "90%",
+    marginTop: 40,
+    marginBottom: 80,
+    alignItems: "center",
+  },
+  infoTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    marginBottom: 10,
+  },
+  infoTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: "#000",
+  },
+  infoBox: {
+    width: "100%",
+    backgroundColor: "#FFF",
+    borderWidth: 2,
+    borderColor: "#000",
+    borderRadius: 14,
+    padding: 18,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 3,
+    elevation: 2,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#CCC",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    marginBottom: 12,
+    color: "#333",
+  },
+  passwordContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#CCC",
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    marginBottom: 12,
+  },
+  infoButtonsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 15,
+    gap: 12,
+  },
+  infoButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  infoButtonText: {
+    color: "#FFF",
+    fontWeight: "700",
+    fontSize: 15,
+    textAlign: "center",
+  },
+  modalOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalBox: {
+    width: "80%",
+    backgroundColor: "#FFF",
+    padding: 25,
+    borderRadius: 12,
+    alignItems: "center",
+  },
+  modalText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  modalButtonsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    gap: 10,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  modalButtonText: {
+    color: "#FFF",
+    fontSize: 15,
+    fontWeight: "600",
+  },
+  bannerButtonsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "90%",
+    marginTop: 20,
+    gap: 12,
+  },
+  bannerButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.15,
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  bannerButtonText: {
+    color: "#FFF",
+    fontSize: 15,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  sectionTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6, // 🔹 garante espaçamento uniforme entre ícone e texto
   },
 });
