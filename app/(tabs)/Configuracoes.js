@@ -29,6 +29,8 @@ export default function Configuracoes() {
   const [expandedBanners, setExpandedBanners] = useState(false);
   const [expandedColors, setExpandedColors] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedReadyImage, setSelectedReadyImage] = useState(null);
 
   // 🔹 Moldura e borda
   const [selectedFrame, setSelectedFrame] = useState(null);
@@ -151,7 +153,16 @@ export default function Configuracoes() {
 
   // (você pode implementar handleImagemPronta depois)
   const handleImagemPronta = () => {
-    alert("Aqui você pode implementar imagens prontas de perfil!");
+    setShowImageModal(true);
+  };
+
+  const handleConfirmarImagemPronta = () => {
+    if (!selectedReadyImage) {
+      Alert.alert("Selecione uma imagem", "Escolha uma das imagens prontas antes de confirmar.");
+      return;
+    }
+    setProfileImage(selectedReadyImage);
+    setShowImageModal(false);
   };
 
   const handleRetirarMoldura = async () => {
@@ -450,15 +461,11 @@ export default function Configuracoes() {
           {/* 🔹 Foto de perfil (galeria ou placeholder) */}
           <Image
             source={
-              // se for string (URI remoto) -> objeto {uri: string}
-              profileImage && typeof profileImage === 'string'
-                ? { uri: profileImage }
-                // se for objeto com campo uri
-                : profileImage && profileImage.uri
-                  // se uri for número (require) usamos o número diretamente
-                  ? (typeof profileImage.uri === 'number' ? profileImage.uri : { uri: profileImage.uri })
-                  // caso contrário, placeholder
-                  : require("../../assets/images/perfilplaceholder.png")
+              profileImage
+                ? typeof profileImage === "number"
+                  ? profileImage // 🔹 imagem local (require)
+                  : { uri: profileImage } // 🔹 imagem da galeria
+                : require("../../assets/images/perfilplaceholder.png") // 🔹 placeholder
             }
             style={styles.profileImage}
           />
@@ -666,6 +673,106 @@ export default function Configuracoes() {
             </View>
           </View>
         )}
+        {/* 🔹 Modal de seleção de imagens prontas */}
+        {showImageModal && (
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalBox}>
+              <Text style={styles.modalText}>Escolha uma imagem de perfil pronta</Text>
+
+              <View style={styles.readyImagesContainer}>
+                {[
+                  require("../../assets/images/foto1.png"),
+                  require("../../assets/images/foto2.png"),
+                  require("../../assets/images/foto3.png"),
+                  require("../../assets/images/foto4.png"),
+                  require("../../assets/images/foto5.png"),
+                  require("../../assets/images/foto6.png"),
+                ].map((img, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => setSelectedReadyImage(img)}
+                    style={[
+                      styles.readyImageWrapper,
+                      selectedReadyImage === img && styles.selectedItem,
+                    ]}
+                  >
+                    <Image source={img} style={styles.readyImage} resizeMode="cover" />
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.modalButtonsRow}>
+                <TouchableOpacity
+                  style={[styles.modalButton, { backgroundColor: "#BDBDBD" }]}
+                  onPress={() => setShowImageModal(false)}
+                >
+                  <Text style={styles.modalButtonText}>Fechar</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.modalButton, { backgroundColor: "#4CAF50" }]}
+                  onPress={handleConfirmarImagemPronta}
+                >
+                  <Text style={styles.modalButtonText}>Confirmar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
+        {/* 🔹 Pop-up de seleção de imagens prontas */}
+        {showImageModal && (
+          <View style={styles.popupOverlay}>
+            <View style={styles.popupBox}>
+              <Text style={styles.popupTitle}>Escolha uma imagem de perfil pronta</Text>
+
+              <View style={styles.readyImagesContainer}>
+                {[
+                  require("../../assets/images/foto1.png"),
+                  require("../../assets/images/foto2.png"),
+                  require("../../assets/images/foto3.png"),
+                  require("../../assets/images/foto4.png"),
+                  require("../../assets/images/foto5.png"),
+                  require("../../assets/images/foto6.png"),
+                ].map((img, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => setSelectedReadyImage(img)}
+                    style={[
+                      styles.readyImageWrapper,
+                      selectedReadyImage === img && styles.selectedItem,
+                    ]}
+                  >
+                    <Image source={img} style={styles.readyImage} resizeMode="cover" />
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.popupButtonsRow}>
+                <TouchableOpacity
+                  style={[styles.popupButton, { backgroundColor: "#BDBDBD" }]}
+                  onPress={() => setShowImageModal(false)}
+                >
+                  <Text style={styles.popupButtonText}>Fechar</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.popupButton, { backgroundColor: "#4CAF50" }]}
+                  onPress={() => {
+                    if (!selectedReadyImage) {
+                      Alert.alert("Selecione uma imagem", "Escolha uma das imagens prontas antes de confirmar.");
+                      return;
+                    }
+                    setProfileImage(selectedReadyImage);
+                    setShowImageModal(false);
+                    setSelectedReadyImage(null); // limpa seleção
+                  }}
+                >
+                  <Text style={styles.popupButtonText}>Confirmar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )}
       </View>
     </ScrollView >
   );
@@ -733,4 +840,78 @@ const styles = StyleSheet.create({
   bannerButton: { flex: 1, paddingVertical: 14, borderRadius: 8, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOpacity: 0.15, shadowOffset: { width: 0, height: 2 }, shadowRadius: 3, elevation: 3 },
   bannerButtonText: { color: "#FFF", fontSize: 15, fontWeight: "700", textAlign: "center" },
   sectionTitleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  readyImagesContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 10,
+    marginBottom: 20,
+  },
+  readyImageWrapper: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    overflow: "hidden",
+    borderWidth: 2,
+    borderColor: "#DDD",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  readyImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 40,
+  },
+  popupOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1000,
+  },
+  popupBox: {
+    width: "88%",
+    backgroundColor: "#FFF",
+    borderRadius: 16,
+    paddingVertical: 28,
+    paddingHorizontal: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 8,
+    elevation: 12,
+    zIndex: 1001,
+  },
+  popupTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0D47A1",
+    marginBottom: 15,
+    textAlign: "center",
+  },
+  popupButtonsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    marginTop: 10,
+    gap: 10,
+  },
+  popupButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  popupButtonText: {
+    color: "#FFF",
+    fontSize: 15,
+    fontWeight: "700",
+  },
 });
