@@ -104,7 +104,15 @@ export default function Perfil() {
             <Image
               source={
                 frameData?.profileImage
-                  ? { uri: frameData.profileImage }
+                  ? (typeof frameData.profileImage === 'string'
+                      ? { uri: frameData.profileImage }
+                      : typeof frameData.profileImage === 'number'
+                        ? frameData.profileImage
+                        : frameData.profileImage && frameData.profileImage.uri
+                          ? (typeof frameData.profileImage.uri === 'number'
+                              ? frameData.profileImage.uri
+                              : { uri: frameData.profileImage.uri })
+                          : require("../../assets/images/perfilplaceholder.png"))
                   : require("../../assets/images/perfilplaceholder.png")
               }
               style={styles.profileImage}

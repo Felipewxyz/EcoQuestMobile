@@ -450,9 +450,15 @@ export default function Configuracoes() {
           {/* 🔹 Foto de perfil (galeria ou placeholder) */}
           <Image
             source={
-              profileImage
+              // se for string (URI remoto) -> objeto {uri: string}
+              profileImage && typeof profileImage === 'string'
                 ? { uri: profileImage }
-                : require("../../assets/images/perfilplaceholder.png")
+                // se for objeto com campo uri
+                : profileImage && profileImage.uri
+                  // se uri for número (require) usamos o número diretamente
+                  ? (typeof profileImage.uri === 'number' ? profileImage.uri : { uri: profileImage.uri })
+                  // caso contrário, placeholder
+                  : require("../../assets/images/perfilplaceholder.png")
             }
             style={styles.profileImage}
           />

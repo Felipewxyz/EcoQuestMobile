@@ -20,7 +20,12 @@ export default function Cadastro() {
   const navigation = useNavigation();
   const [senhaVisivel, setSenhaVisivel] = useState(false);
   const [fotoPerfil, setFotoPerfil] = useState(null);
+  const [nome, setNome] = useState('');
+  const [usuario, setUsuario] = useState('');
+  const [email, setEmail] = useState('');
+  const [senha, setSenha] = useState('');
 
+  // 🔹 Escolher imagem de perfil
   const escolherImagem = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
@@ -39,6 +44,18 @@ export default function Cadastro() {
     }
   };
 
+  // 🔹 Apenas validação local (sem backend)
+  const handleCadastro = () => {
+    if (!nome || !usuario || !email || !senha) {
+      Alert.alert('Erro', 'Preencha todos os campos!');
+      return;
+    }
+
+    Alert.alert('Sucesso', 'Cadastro concluído localmente!');
+    navigation.navigate('Login');
+  };
+
+  // 🔹 Interface
   return (
     <ImageBackground
       source={require('../assets/images/fundo2.png')}
@@ -57,15 +74,12 @@ export default function Cadastro() {
         keyboardVerticalOffset={80}
       >
         <ScrollView contentContainerStyle={styles.scrollContent}>
-
-          {/* Logo no topo */}
           <Image
             source={require('../assets/images/logo.png')}
             style={styles.logo}
             resizeMode="contain"
           />
 
-          {/* Foto de Perfil maior/larga */}
           <TouchableOpacity style={styles.fotoContainer} onPress={escolherImagem}>
             {fotoPerfil ? (
               <Image source={{ uri: fotoPerfil }} style={styles.fotoPerfil} />
@@ -83,24 +97,33 @@ export default function Cadastro() {
             style={styles.input}
             placeholder="adicione seu nome"
             placeholderTextColor="#666"
+            value={nome}
+            onChangeText={setNome}
           />
           <TextInput
             style={styles.input}
             placeholder="crie seu nome de usuário"
             placeholderTextColor="#666"
+            value={usuario}
+            onChangeText={setUsuario}
           />
           <TextInput
             style={styles.input}
             placeholder="adicione seu email"
             keyboardType="email-address"
             placeholderTextColor="#666"
+            value={email}
+            onChangeText={setEmail}
           />
+
           <View style={styles.ContainerPassword}>
             <TextInput
               style={styles.inputSenha}
               placeholder="crie sua senha"
               secureTextEntry={!senhaVisivel}
               placeholderTextColor="#666"
+              value={senha}
+              onChangeText={setSenha}
             />
             <TouchableOpacity onPress={() => setSenhaVisivel(!senhaVisivel)}>
               <Ionicons
@@ -112,10 +135,7 @@ export default function Cadastro() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            style={styles.ButtonCadastro}
-            onPress={() => navigation.navigate('Login')}
-          >
+          <TouchableOpacity style={styles.ButtonCadastro} onPress={handleCadastro}>
             <Text style={styles.ButtonText}>CONCLUIR CADASTRO</Text>
           </TouchableOpacity>
         </ScrollView>
@@ -168,7 +188,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 15,
     marginBottom: 16,
-    width: 260, // largura fixa menor
+    width: 260,
     fontSize: 15,
     alignSelf: 'center',
   },
@@ -181,7 +201,7 @@ const styles = StyleSheet.create({
   ContainerPassword: {
     flexDirection: 'row',
     alignItems: 'center',
-    width: 260, // mesma largura dos inputs
+    width: 260,
     backgroundColor: '#fff',
     borderRadius: 6,
     paddingHorizontal: 0,
@@ -192,7 +212,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#019314',
     paddingVertical: 16,
     borderRadius: 8,
-    width: 260, // mesma largura dos inputs
+    width: 260,
     alignItems: 'center',
     alignSelf: 'center',
   },
@@ -205,13 +225,12 @@ const styles = StyleSheet.create({
     marginLeft: 10,
     marginRight: 10,
   },
-  // Quadrado da foto levemente mais largo e menor de altura
   fotoContainer: {
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 25,
-    width: 200, // um pouco mais largo
-    height: 180, // menor de altura
+    width: 200,
+    height: 180,
     borderRadius: 20,
     borderWidth: 2,
     borderColor: '#fff',
