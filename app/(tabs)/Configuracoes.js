@@ -1,8 +1,10 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useNavigation } from "@react-navigation/native";
 import * as ImagePicker from "expo-image-picker";
 import { useEffect, useRef, useState } from "react";
 import {
+  Alert,
   Animated,
   Dimensions,
   Easing,
@@ -10,12 +12,10 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TouchableOpacity,
-  View,
   TextInput,
-  Alert
+  TouchableOpacity,
+  View
 } from "react-native";
-import Ionicons from '@expo/vector-icons/Ionicons';
 
 const { width } = Dimensions.get("window");
 
@@ -334,584 +334,545 @@ export default function Configuracoes() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ alignItems: "center", paddingBottom: 80 }}>
-      {/* 🔹 Carrossel */}
-      <View style={styles.carouselWrapper}>
-        <Animated.ScrollView
-          ref={scrollRef}
-          horizontal
-          pagingEnabled
-          showsHorizontalScrollIndicator={false}
-          onScroll={handleScroll}
-          onMomentumScrollEnd={handleMomentumScrollEnd}
-          scrollEventThrottle={16}
-          contentContainerStyle={{ paddingTop: 30 }}
-        >
-          {imagens.map((item) => (
-            <TouchableOpacity key={item.id} activeOpacity={0.9} onPress={() => navigation.navigate(item.destino, { fromConfig: true })}>
-              <Image source={item.uri} style={styles.bannerImage} resizeMode="cover" />
-            </TouchableOpacity>
-          ))}
-        </Animated.ScrollView>
+    <>
+      <ScrollView style={styles.container} contentContainerStyle={{ alignItems: "center", paddingBottom: 80 }}>
+        {/* 🔹 Carrossel */}
+        <View style={styles.carouselWrapper}>
+          <Animated.ScrollView
+            ref={scrollRef}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={handleScroll}
+            onMomentumScrollEnd={handleMomentumScrollEnd}
+            scrollEventThrottle={16}
+            contentContainerStyle={{ paddingTop: 30 }}
+          >
+            {imagens.map((item) => (
+              <TouchableOpacity key={item.id} activeOpacity={0.9} onPress={() => navigation.navigate(item.destino, { fromConfig: true })}>
+                <Image source={item.uri} style={styles.bannerImage} resizeMode="cover" />
+              </TouchableOpacity>
+            ))}
+          </Animated.ScrollView>
 
-        <View style={styles.dotsContainer}>
-          {imagens.map((_, index) => (
-            <View key={index} style={[styles.dot, { backgroundColor: index === currentIndex ? "#0D47A1" : "#BDBDBD" }]} />
-          ))}
+          <View style={styles.dotsContainer}>
+            {imagens.map((_, index) => (
+              <View key={index} style={[styles.dot, { backgroundColor: index === currentIndex ? "#0D47A1" : "#BDBDBD" }]} />
+            ))}
+          </View>
         </View>
-      </View>
 
-      {/* 🔹 Preview do banner */}
-      <View style={styles.previewContainer}>
-        <View style={styles.previewBox}>
-          {selectedItem?.type === "banner" ? (
-            <Image source={selectedItem.value} style={styles.previewImage} resizeMode="cover" />
-          ) : (
-            <View style={[styles.previewImage, { backgroundColor: selectedItem?.value || "#DDD" }]} />
+        {/* 🔹 Preview do banner */}
+        <View style={styles.previewContainer}>
+          <View style={styles.previewBox}>
+            {selectedItem?.type === "banner" ? (
+              <Image source={selectedItem.value} style={styles.previewImage} resizeMode="cover" />
+            ) : (
+              <View style={[styles.previewImage, { backgroundColor: selectedItem?.value || "#DDD" }]} />
+            )}
+          </View>
+          <Text style={styles.previewLabel}>Como seu banner está</Text>
+        </View>
+
+        {/* 🔹 Banners do usuário */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleRow}>
+              <Ionicons name="image-outline" size={26} color="#000" style={{ marginRight: 6 }} />
+              <Text style={[styles.sectionTitle, { color: "#000" }]}>Seus banners</Text>
+            </View>
+            <TouchableOpacity onPress={() => setExpandedBanners(!expandedBanners)}>
+              <Text style={[styles.arrow, { color: "#000" }]}>
+                {expandedBanners ? "▲" : "▼"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.bannerRow}>
+            {bannersVisiveis.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                onPress={() => handleSelecionarBanner(item)}
+                style={[
+                  styles.bannerOption,
+                  selectedBanner === item.uri && styles.selectedItem,
+                ]}
+                activeOpacity={0.8}
+              >
+                <Image source={item.uri} style={styles.bannerThumb} />
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* 🔹 Cores sólidas */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleRow}>
+              <Ionicons name="color-palette-outline" size={26} color="#000" style={{ marginRight: 6 }} />
+              <Text style={[styles.sectionTitle, { color: "#000" }]}>Cores sólidas</Text>
+            </View>
+            <TouchableOpacity onPress={() => setExpandedColors(!expandedColors)}>
+              <Text style={[styles.arrow, { color: "#000" }]}>
+                {expandedColors ? "▲" : "▼"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.colorsGrid}>
+            {coresVisiveis.map((cor, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => handleSelecionarCor(cor)}
+                style={[
+                  styles.colorOption,
+                  { backgroundColor: cor },
+                  selectedColor === cor && styles.selectedItem,
+                ]}
+              />
+            ))}
+          </View>
+        </View>
+
+        {/* Botões Salvar / Retirar Banner */}
+        <View style={styles.bannerButtonsRow}>
+          <TouchableOpacity
+            style={[styles.bannerButton, { backgroundColor: "#4CAF50" }]}
+            onPress={handleSalvarBanner}
+          >
+            <Text style={styles.bannerButtonText}>Salvar banner</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.bannerButton, { backgroundColor: "#E53935" }]}
+            onPress={handleRetirarBanner}
+          >
+            <Text style={styles.bannerButtonText}>Retirar banner</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* 🔹 Preview da Moldura e/ou Borda */}
+        <View style={styles.framePreviewContainer}>
+          <View
+            style={[
+              styles.borderCircle,
+              selectedBorderColor && { borderColor: selectedBorderColor, borderWidth: 6 },
+            ]}
+          >
+            {/* 🔹 Foto de perfil (galeria ou placeholder) */}
+            <Image
+              source={
+                profileImage
+                  ? typeof profileImage === "number"
+                    ? profileImage // 🔹 imagem local (require)
+                    : { uri: profileImage } // 🔹 imagem da galeria
+                  : require("../../assets/images/perfilplaceholder.png") // 🔹 placeholder
+              }
+              style={styles.profileImage}
+            />
+          </View>
+
+          {/* 🔹 Moldura fora do círculo */}
+          {selectedFrame && (
+            <Image
+              source={selectedFrame.uri}
+              style={styles.frameOutside}
+              resizeMode="contain"
+            />
+          )}
+
+          <Text style={styles.previewLabel}>Como seu perfil está</Text>
+
+          {/* 🔹 Texto adicional */}
+          <Text style={styles.chooseText}>
+            ESCOLHA SUA IMAGEM DE PERFIL
+          </Text>
+
+          {/* 🔹 Botões lado a lado */}
+          <View style={styles.imageButtonRow}>
+            <TouchableOpacity
+              style={[styles.imageButton, { backgroundColor: "#0D47A1" }]}
+              onPress={handleEscolherImagemGaleria}
+            >
+              <Text style={styles.imageButtonText}>Imagem da Galeria</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.imageButton, { backgroundColor: "#4CAF50" }]}
+              onPress={handleImagemPronta}
+            >
+              <Text style={styles.imageButtonText}>Imagem Pronta</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
+        {/* 🔹 Molduras */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleRow}>
+              <Ionicons name="person-circle-outline" size={26} color="#000" style={{ marginRight: 6 }} />
+              <Text style={[styles.sectionTitle, { color: "#000" }]}>Suas molduras</Text>
+            </View>
+            <TouchableOpacity onPress={() => setExpandedFrames(!expandedFrames)}>
+              <Text style={[styles.arrow, { color: "#000" }]}>
+                {expandedFrames ? "▲" : "▼"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.bannerRow}>
+            {moldurasVisiveis.map((item) => (
+              <TouchableOpacity
+                key={item.id}
+                onPress={() => handleSelecionarMoldura(item)}
+                style={[
+                  styles.frameOption,
+                  selectedFrame?.id === item.id && styles.selectedItem,
+                ]}
+              >
+                <Image
+                  source={item.uri}
+                  style={styles.frameThumb}
+                  resizeMode="contain"
+                />
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* 🔹 Cores de borda */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <View style={styles.sectionTitleRow}>
+              <Ionicons name="color-palette-outline" size={26} color="#000" style={{ marginRight: 6 }} />
+              <Text style={[styles.sectionTitle, { color: "#000" }]}>Cores sólidas (borda)</Text>
+            </View>
+            <TouchableOpacity onPress={() => setExpandedBorderColors(!expandedBorderColors)}>
+              <Text style={[styles.arrow, { color: "#000" }]}>
+                {expandedBorderColors ? "▲" : "▼"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.colorsGrid}>
+            {bordasVisiveis.map((cor, index) => (
+              <TouchableOpacity
+                key={index}
+                onPress={() => handleSelecionarBorda(cor)}
+                style={[
+                  styles.colorOption,
+                  { backgroundColor: cor },
+                  selectedBorderColor === cor && styles.selectedItem,
+                ]}
+              />
+            ))}
+          </View>
+        </View>
+
+        {/* 🔹 Botões finais */}
+        <View style={styles.bottomButtonsRow}>
+          <TouchableOpacity style={[styles.saveButton, { flex: 1 }]} onPress={handleSalvarMoldura}>
+            <Text style={styles.saveButtonText}>Salvar moldura, cor ou imagem</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.removeButton, { flex: 1 }]} onPress={handleRetirarMoldura}>
+            <Text style={styles.removeButtonText}>Retirar moldura, cor ou imagem</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* 🔹 Informações Pessoais */}
+        <View style={styles.infoSection}>
+          <View style={styles.infoTitleRow}>
+            <Ionicons name="folder-outline" size={26} color="#000" style={{ marginRight: 8 }} />
+            <Text style={styles.infoTitle}>Informações pessoais</Text>
+          </View>
+
+          <View style={styles.infoBox}>
+            {/* Nome */}
+            <TextInput
+              style={styles.input}
+              placeholder="Nome"
+              placeholderTextColor="#999"
+              value={nome}
+              onChangeText={setNome}
+            />
+
+            {/* Usuário */}
+            <TextInput
+              style={styles.input}
+              placeholder="Usuário"
+              placeholderTextColor="#999"
+              value={usuario}
+              onChangeText={setUsuario}
+            />
+
+            {/* E-mail */}
+            <TextInput
+              style={styles.input}
+              placeholder="E-mail"
+              placeholderTextColor="#999"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+
+            {/* Senha */}
+            <View style={styles.passwordContainer}>
+              <TextInput
+                style={[styles.input, { flex: 1, marginBottom: 0, borderWidth: 0 }]}
+                placeholder="Senha"
+                placeholderTextColor="#999"
+                secureTextEntry={!senhaVisivel}
+                value={senha}
+                onChangeText={setSenha}
+              />
+              <TouchableOpacity onPress={() => setSenhaVisivel(!senhaVisivel)}>
+                <Ionicons name={senhaVisivel ? 'eye-off' : 'eye'} size={22} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Botões */}
+            <View style={styles.infoButtonsRow}>
+              <TouchableOpacity
+                style={[styles.infoButton, { backgroundColor: "#4CAF50" }]}
+                onPress={handleSalvarInfo}
+              >
+                <Text style={styles.infoButtonText}>Salvar informações</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.infoButton, { backgroundColor: "#E53935" }]}
+                onPress={() => setShowLogoutModal(true)}
+              >
+                <Text style={styles.infoButtonText}>Deslogar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* 🔹 Modal de confirmação de logout */}
+          {showLogoutModal && (
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalBox}>
+                <Text style={styles.modalText}>Tem certeza que deseja deslogar?</Text>
+
+                <View style={styles.modalButtonsRow}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, { backgroundColor: "#BDBDBD" }]}
+                    onPress={() => setShowLogoutModal(false)}
+                  >
+                    <Text style={styles.modalButtonText}>Fechar</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.modalButton, { backgroundColor: "#E53935" }]}
+                    onPress={handleConfirmarLogout}
+                  >
+                    <Text style={styles.modalButtonText}>Confirmar</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
           )}
         </View>
-        <Text style={styles.previewLabel}>Como seu banner está</Text>
-      </View>
+      </ScrollView >
+      {/* 🔹 Pop-up de seleção de imagens prontas */}
+      {showImageModal && (
+        <View style={styles.popupOverlay}>
+          <View style={styles.popupBox}>
+            <Text style={styles.popupTitle}>Escolha uma imagem de perfil pronta</Text>
 
-      {/* 🔹 Banners do usuário */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <View style={styles.sectionTitleRow}>
-            <Ionicons name="image-outline" size={26} color="#000" style={{ marginRight: 6 }} />
-            <Text style={[styles.sectionTitle, { color: "#000" }]}>Seus banners</Text>
-          </View>
-          <TouchableOpacity onPress={() => setExpandedBanners(!expandedBanners)}>
-            <Text style={[styles.arrow, { color: "#000" }]}>
-              {expandedBanners ? "▲" : "▼"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.bannerRow}>
-          {bannersVisiveis.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              onPress={() => handleSelecionarBanner(item)}
-              style={[
-                styles.bannerOption,
-                selectedBanner === item.uri && styles.selectedItem,
-              ]}
-              activeOpacity={0.8}
-            >
-              <Image source={item.uri} style={styles.bannerThumb} />
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* 🔹 Cores sólidas */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <View style={styles.sectionTitleRow}>
-            <Ionicons name="color-palette-outline" size={26} color="#000" style={{ marginRight: 6 }} />
-            <Text style={[styles.sectionTitle, { color: "#000" }]}>Cores sólidas</Text>
-          </View>
-          <TouchableOpacity onPress={() => setExpandedColors(!expandedColors)}>
-            <Text style={[styles.arrow, { color: "#000" }]}>
-              {expandedColors ? "▲" : "▼"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.colorsGrid}>
-          {coresVisiveis.map((cor, index) => (
-            <TouchableOpacity
-              key={index}
-              onPress={() => handleSelecionarCor(cor)}
-              style={[
-                styles.colorOption,
-                { backgroundColor: cor },
-                selectedColor === cor && styles.selectedItem,
-              ]}
-            />
-          ))}
-        </View>
-      </View>
-
-      {/* Botões Salvar / Retirar Banner */}
-      <View style={styles.bannerButtonsRow}>
-        <TouchableOpacity
-          style={[styles.bannerButton, { backgroundColor: "#4CAF50" }]}
-          onPress={handleSalvarBanner}
-        >
-          <Text style={styles.bannerButtonText}>Salvar banner</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.bannerButton, { backgroundColor: "#E53935" }]}
-          onPress={handleRetirarBanner}
-        >
-          <Text style={styles.bannerButtonText}>Retirar banner</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* 🔹 Preview da Moldura e/ou Borda */}
-      <View style={styles.framePreviewContainer}>
-        <View
-          style={[
-            styles.borderCircle,
-            selectedBorderColor && { borderColor: selectedBorderColor, borderWidth: 6 },
-          ]}
-        >
-          {/* 🔹 Foto de perfil (galeria ou placeholder) */}
-          <Image
-            source={
-              profileImage
-                ? typeof profileImage === "number"
-                  ? profileImage // 🔹 imagem local (require)
-                  : { uri: profileImage } // 🔹 imagem da galeria
-                : require("../../assets/images/perfilplaceholder.png") // 🔹 placeholder
-            }
-            style={styles.profileImage}
-          />
-        </View>
-
-        {/* 🔹 Moldura fora do círculo */}
-        {selectedFrame && (
-          <Image
-            source={selectedFrame.uri}
-            style={styles.frameOutside}
-            resizeMode="contain"
-          />
-        )}
-
-        <Text style={styles.previewLabel}>Como seu perfil está</Text>
-
-        {/* 🔹 Texto adicional */}
-        <Text style={styles.chooseText}>
-          ESCOLHA SUA IMAGEM DE PERFIL
-        </Text>
-
-        {/* 🔹 Botões lado a lado */}
-        <View style={styles.imageButtonRow}>
-          <TouchableOpacity
-            style={[styles.imageButton, { backgroundColor: "#0D47A1" }]}
-            onPress={handleEscolherImagemGaleria}
-          >
-            <Text style={styles.imageButtonText}>Imagem da Galeria</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.imageButton, { backgroundColor: "#4CAF50" }]}
-            onPress={handleImagemPronta}
-          >
-            <Text style={styles.imageButtonText}>Imagem Pronta</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* 🔹 Molduras */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <View style={styles.sectionTitleRow}>
-            <Ionicons name="person-circle-outline" size={26} color="#000" style={{ marginRight: 6 }} />
-            <Text style={[styles.sectionTitle, { color: "#000" }]}>Suas molduras</Text>
-          </View>
-          <TouchableOpacity onPress={() => setExpandedFrames(!expandedFrames)}>
-            <Text style={[styles.arrow, { color: "#000" }]}>
-              {expandedFrames ? "▲" : "▼"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.bannerRow}>
-          {moldurasVisiveis.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              onPress={() => handleSelecionarMoldura(item)}
-              style={[
-                styles.frameOption,
-                selectedFrame?.id === item.id && styles.selectedItem,
-              ]}
-            >
-              <Image
-                source={item.uri}
-                style={styles.frameThumb}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
-
-      {/* 🔹 Cores de borda */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <View style={styles.sectionTitleRow}>
-            <Ionicons name="color-palette-outline" size={26} color="#000" style={{ marginRight: 6 }} />
-            <Text style={[styles.sectionTitle, { color: "#000" }]}>Cores sólidas (borda)</Text>
-          </View>
-          <TouchableOpacity onPress={() => setExpandedBorderColors(!expandedBorderColors)}>
-            <Text style={[styles.arrow, { color: "#000" }]}>
-              {expandedBorderColors ? "▲" : "▼"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.colorsGrid}>
-          {bordasVisiveis.map((cor, index) => (
-            <TouchableOpacity
-              key={index}
-              onPress={() => handleSelecionarBorda(cor)}
-              style={[
-                styles.colorOption,
-                { backgroundColor: cor },
-                selectedBorderColor === cor && styles.selectedItem,
-              ]}
-            />
-          ))}
-        </View>
-      </View>
-
-      {/* 🔹 Botões finais */}
-      <View style={styles.bottomButtonsRow}>
-        <TouchableOpacity style={[styles.saveButton, { flex: 1 }]} onPress={handleSalvarMoldura}>
-          <Text style={styles.saveButtonText}>Salvar moldura, cor ou imagem</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={[styles.removeButton, { flex: 1 }]} onPress={handleRetirarMoldura}>
-          <Text style={styles.removeButtonText}>Retirar moldura, cor ou imagem</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* 🔹 Informações Pessoais */}
-      <View style={styles.infoSection}>
-        <View style={styles.infoTitleRow}>
-          <Ionicons name="folder-outline" size={26} color="#000" style={{ marginRight: 8 }} />
-          <Text style={styles.infoTitle}>Informações pessoais</Text>
-        </View>
-
-        <View style={styles.infoBox}>
-          {/* Nome */}
-          <TextInput
-            style={styles.input}
-            placeholder="Nome"
-            placeholderTextColor="#999"
-            value={nome}
-            onChangeText={setNome}
-          />
-
-          {/* Usuário */}
-          <TextInput
-            style={styles.input}
-            placeholder="Usuário"
-            placeholderTextColor="#999"
-            value={usuario}
-            onChangeText={setUsuario}
-          />
-
-          {/* E-mail */}
-          <TextInput
-            style={styles.input}
-            placeholder="E-mail"
-            placeholderTextColor="#999"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-
-          {/* Senha */}
-          <View style={styles.passwordContainer}>
-            <TextInput
-              style={[styles.input, { flex: 1, marginBottom: 0, borderWidth: 0 }]}
-              placeholder="Senha"
-              placeholderTextColor="#999"
-              secureTextEntry={!senhaVisivel}
-              value={senha}
-              onChangeText={setSenha}
-            />
-            <TouchableOpacity onPress={() => setSenhaVisivel(!senhaVisivel)}>
-              <Ionicons name={senhaVisivel ? 'eye-off' : 'eye'} size={22} color="#666" />
-            </TouchableOpacity>
-          </View>
-
-          {/* Botões */}
-          <View style={styles.infoButtonsRow}>
-            <TouchableOpacity
-              style={[styles.infoButton, { backgroundColor: "#4CAF50" }]}
-              onPress={handleSalvarInfo}
-            >
-              <Text style={styles.infoButtonText}>Salvar informações</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.infoButton, { backgroundColor: "#E53935" }]}
-              onPress={() => setShowLogoutModal(true)}
-            >
-              <Text style={styles.infoButtonText}>Deslogar</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* 🔹 Modal de confirmação de logout */}
-        {showLogoutModal && (
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalBox}>
-              <Text style={styles.modalText}>Tem certeza que deseja deslogar?</Text>
-
-              <View style={styles.modalButtonsRow}>
+            <View style={styles.readyImagesContainer}>
+              {[
+                require("../../assets/images/foto1.png"),
+                require("../../assets/images/foto2.png"),
+                require("../../assets/images/foto3.png"),
+                require("../../assets/images/foto4.png"),
+                require("../../assets/images/foto5.png"),
+                require("../../assets/images/foto6.png"),
+              ].map((img, index) => (
                 <TouchableOpacity
-                  style={[styles.modalButton, { backgroundColor: "#BDBDBD" }]}
-                  onPress={() => setShowLogoutModal(false)}
+                  key={index}
+                  onPress={() => setSelectedReadyImage(img)}
+                  style={[
+                    styles.readyImageWrapper,
+                    selectedReadyImage === img && styles.selectedItem,
+                  ]}
                 >
-                  <Text style={styles.modalButtonText}>Fechar</Text>
+                  <Image source={img} style={styles.readyImage} resizeMode="cover" />
                 </TouchableOpacity>
+              ))}
+            </View>
 
-                <TouchableOpacity
-                  style={[styles.modalButton, { backgroundColor: "#E53935" }]}
-                  onPress={handleConfirmarLogout}
-                >
-                  <Text style={styles.modalButtonText}>Confirmar</Text>
-                </TouchableOpacity>
-              </View>
+            <View style={styles.popupButtonsRow}>
+              <TouchableOpacity
+                style={[styles.popupButton, { backgroundColor: "#BDBDBD" }]}
+                onPress={() => setShowImageModal(false)}
+              >
+                <Text style={styles.popupButtonText}>Fechar</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.popupButton, { backgroundColor: "#4CAF50" }]}
+                onPress={() => {
+                  if (!selectedReadyImage) {
+                    Alert.alert(
+                      "Selecione uma imagem",
+                      "Escolha uma das imagens prontas antes de confirmar."
+                    );
+                    return;
+                  }
+                  setProfileImage(selectedReadyImage);
+                  setShowImageModal(false);
+                  setSelectedReadyImage(null);
+                }}
+              >
+                <Text style={styles.popupButtonText}>Confirmar</Text>
+              </TouchableOpacity>
             </View>
           </View>
-        )}
-        {/* 🔹 Modal de seleção de imagens prontas */}
-        {showImageModal && (
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalBox}>
-              <Text style={styles.modalText}>Escolha uma imagem de perfil pronta</Text>
-
-              <View style={styles.readyImagesContainer}>
-                {[
-                  require("../../assets/images/foto1.png"),
-                  require("../../assets/images/foto2.png"),
-                  require("../../assets/images/foto3.png"),
-                  require("../../assets/images/foto4.png"),
-                  require("../../assets/images/foto5.png"),
-                  require("../../assets/images/foto6.png"),
-                ].map((img, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => setSelectedReadyImage(img)}
-                    style={[
-                      styles.readyImageWrapper,
-                      selectedReadyImage === img && styles.selectedItem,
-                    ]}
-                  >
-                    <Image source={img} style={styles.readyImage} resizeMode="cover" />
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <View style={styles.modalButtonsRow}>
-                <TouchableOpacity
-                  style={[styles.modalButton, { backgroundColor: "#BDBDBD" }]}
-                  onPress={() => setShowImageModal(false)}
-                >
-                  <Text style={styles.modalButtonText}>Fechar</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.modalButton, { backgroundColor: "#4CAF50" }]}
-                  onPress={handleConfirmarImagemPronta}
-                >
-                  <Text style={styles.modalButtonText}>Confirmar</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        )}
-        {/* 🔹 Pop-up de seleção de imagens prontas */}
-        {showImageModal && (
-          <View style={styles.popupOverlay}>
-            <View style={styles.popupBox}>
-              <Text style={styles.popupTitle}>Escolha uma imagem de perfil pronta</Text>
-
-              <View style={styles.readyImagesContainer}>
-                {[
-                  require("../../assets/images/foto1.png"),
-                  require("../../assets/images/foto2.png"),
-                  require("../../assets/images/foto3.png"),
-                  require("../../assets/images/foto4.png"),
-                  require("../../assets/images/foto5.png"),
-                  require("../../assets/images/foto6.png"),
-                ].map((img, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => setSelectedReadyImage(img)}
-                    style={[
-                      styles.readyImageWrapper,
-                      selectedReadyImage === img && styles.selectedItem,
-                    ]}
-                  >
-                    <Image source={img} style={styles.readyImage} resizeMode="cover" />
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              <View style={styles.popupButtonsRow}>
-                <TouchableOpacity
-                  style={[styles.popupButton, { backgroundColor: "#BDBDBD" }]}
-                  onPress={() => setShowImageModal(false)}
-                >
-                  <Text style={styles.popupButtonText}>Fechar</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.popupButton, { backgroundColor: "#4CAF50" }]}
-                  onPress={() => {
-                    if (!selectedReadyImage) {
-                      Alert.alert("Selecione uma imagem", "Escolha uma das imagens prontas antes de confirmar.");
-                      return;
-                    }
-                    setProfileImage(selectedReadyImage);
-                    setShowImageModal(false);
-                    setSelectedReadyImage(null); // limpa seleção
-                  }}
-                >
-                  <Text style={styles.popupButtonText}>Confirmar</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </View>
-        )}
-      </View>
-    </ScrollView >
+        </View>
+      )}
+    </>
   );
+
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#FFF" },
-  carouselWrapper: { position: "relative", width: "100%" },
-  bannerImage: { width: width, height: 220, borderRadius: 8 },
-  dotsContainer: { position: "absolute", bottom: 10, left: 0, right: 0, flexDirection: "row", justifyContent: "center" },
-  dot: { width: 10, height: 10, borderRadius: 5, marginHorizontal: 6 },
-  previewContainer: { width: "100%", alignItems: "center", marginTop: 20, marginBottom: 25 },
-  previewBox: { width: "90%", height: 180, borderRadius: 14, overflow: "hidden", backgroundColor: "#EEE", shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 4 },
-  previewImage: { width: "100%", height: "100%", borderRadius: 14 },
-  section: { width: "90%", marginTop: 30 },
-  sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
-  sectionTitle: { fontSize: 20, fontWeight: "600", color: "#0D47A1" },
-  arrow: { fontSize: 18, color: "#0D47A1" },
-  bannerRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
-  bannerOption: { width: "48%", marginBottom: 10 },
-  bannerThumb: { width: "100%", height: 100, borderRadius: 8 },
-  colorsGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
-  colorOption: { width: "22%", height: 60, borderRadius: 8, marginBottom: 10 },
-  selectedItem: { borderWidth: 3, borderColor: "#0D47A1" },
-  framePreviewContainer: { alignItems: "center", justifyContent: "center", marginTop: 40, width: 230, height: "auto", position: "relative" },
-  frameCircle: { width: 160, height: 160, borderRadius: 80, backgroundColor: "#EEE", alignItems: "center", justifyContent: "center", overflow: "hidden" },
-  profileImage: { width: 130, height: 130, borderRadius: 65, zIndex: 1 },
-  molduraPreviewImage: { position: "absolute", width: 170, height: 170, borderRadius: 85, zIndex: 10 },
-  borderCircle: { width: 160, height: 160, borderRadius: 80, alignItems: "center", justifyContent: "center", overflow: "hidden", position: "relative", zIndex: 2 },
-  frameOption: { width: "48%", height: 140, marginBottom: 10, borderRadius: 10, backgroundColor: "#EEE", alignItems: "center", justifyContent: "center" },
-  frameThumb: { width: "100%", height: "100%", borderRadius: 10 },
-  buttonRow: { flexDirection: "column", justifyContent: "center", alignItems: "center", gap: 10, marginTop: 40 },
-  topSaveContainer: { width: "90%", alignItems: "center", marginTop: 10 },
-  topSaveButton: { backgroundColor: "#0D47A1", paddingVertical: 12, paddingHorizontal: 40, borderRadius: 8 },
-  topSaveButtonText: { color: "#FFF", fontSize: 18, fontWeight: "bold" },
-  saveBannerButton: { backgroundColor: "#4CAF50", paddingVertical: 12, paddingHorizontal: 20, borderRadius: 8, alignItems: "center", marginTop: 10 },
-  saveBannerButtonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
-  frameOutside: { position: "absolute", width: 265, height: 265, top: -58, right: -25, zIndex: 3 },
-  previewLabel: { marginTop: 45, fontSize: 14, fontWeight: "600", color: "#333" },
-  chooseText: { marginTop: 10, fontSize: 11, fontWeight: "600", color: "#333", textAlign: "center", letterSpacing: 0.3 },
-  imageButtonRow: { flexDirection: "row", justifyContent: "space-between", width: "130%", marginTop: 15, gap: 15 },
-  imageButton: { flex: 1, paddingVertical: 14, borderRadius: 8, alignItems: "center", justifyContent: "center" },
-  imageButtonText: { color: "#FFF", fontSize: 15, fontWeight: "600", textAlign: "center" },
-  bottomButtonsRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", width: "90%", marginTop: 40, marginBottom: 60, gap: 15 },
-  saveButton: { backgroundColor: "#4CAF50", paddingVertical: 14, paddingHorizontal: 10, borderRadius: 8, alignItems: "center", justifyContent: "center" },
-  removeButton: { backgroundColor: "#E53935", paddingVertical: 14, paddingHorizontal: 10, borderRadius: 8, alignItems: "center", justifyContent: "center" },
-  saveButtonText: { color: "#FFF", fontSize: 15, fontWeight: "bold", textAlign: "center" },
-  removeButtonText: { color: "#FFF", fontSize: 15, fontWeight: "bold", textAlign: "center" },
-  infoSection: { width: "90%", marginTop: 40, marginBottom: 80, alignItems: "center" },
-  infoTitleRow: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", marginBottom: 10 },
-  infoTitle: { fontSize: 20, fontWeight: "700", color: "#000" },
-  infoBox: { width: "100%", backgroundColor: "#FFF", borderWidth: 2, borderColor: "#000", borderRadius: 14, padding: 18, shadowColor: "#000", shadowOpacity: 0.08, shadowOffset: { width: 0, height: 2 }, shadowRadius: 3, elevation: 2 },
-  input: { borderWidth: 1, borderColor: "#CCC", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, marginBottom: 12, color: "#333" },
-  passwordContainer: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#CCC", borderRadius: 8, paddingHorizontal: 10, marginBottom: 12 },
-  infoButtonsRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 15, gap: 12 },
-  infoButton: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: "center", justifyContent: "center" },
-  infoButtonText: { color: "#FFF", fontWeight: "700", fontSize: 15, textAlign: "center" },
-  modalOverlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center", justifyContent: "center" },
-  modalBox: { width: "80%", backgroundColor: "#FFF", padding: 25, borderRadius: 12, alignItems: "center" },
-  modalText: { fontSize: 16, fontWeight: "600", color: "#333", textAlign: "center", marginBottom: 20 },
-  modalButtonsRow: { flexDirection: "row", justifyContent: "space-between", width: "100%", gap: 10 },
-  modalButton: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: "center" },
-  modalButtonText: { color: "#FFF", fontSize: 15, fontWeight: "600" },
-  bannerButtonsRow: { flexDirection: "row", justifyContent: "space-between", width: "90%", marginTop: 20, gap: 12 },
-  bannerButton: { flex: 1, paddingVertical: 14, borderRadius: 8, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOpacity: 0.15, shadowOffset: { width: 0, height: 2 }, shadowRadius: 3, elevation: 3 },
-  bannerButtonText: { color: "#FFF", fontSize: 15, fontWeight: "700", textAlign: "center" },
-  sectionTitleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  readyImagesContainer: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: 10,
-    marginBottom: 20,
-  },
-  readyImageWrapper: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    overflow: "hidden",
-    borderWidth: 2,
-    borderColor: "#DDD",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  readyImage: {
-    width: "100%",
-    height: "100%",
-    borderRadius: 40,
-  },
-  popupOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.6)",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1000,
-  },
-  popupBox: {
-    width: "88%",
-    backgroundColor: "#FFF",
-    borderRadius: 16,
-    paddingVertical: 28,
-    paddingHorizontal: 22,
-    alignItems: "center",
-    justifyContent: "center",
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 8,
-    elevation: 12,
-    zIndex: 1001,
-  },
-  popupTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#0D47A1",
-    marginBottom: 15,
-    textAlign: "center",
-  },
-  popupButtonsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    width: "100%",
-    marginTop: 10,
-    gap: 10,
-  },
-  popupButton: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  popupButtonText: {
-    color: "#FFF",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-});
+    container: { flex: 1, backgroundColor: "#FFF" },
+    carouselWrapper: { position: "relative", width: "100%" },
+    bannerImage: { width: width, height: 220, borderRadius: 8 },
+    dotsContainer: { position: "absolute", bottom: 10, left: 0, right: 0, flexDirection: "row", justifyContent: "center" },
+    dot: { width: 10, height: 10, borderRadius: 5, marginHorizontal: 6 },
+    previewContainer: { width: "100%", alignItems: "center", marginTop: 20, marginBottom: 25 },
+    previewBox: { width: "90%", height: 180, borderRadius: 14, overflow: "hidden", backgroundColor: "#EEE", shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 4 },
+    previewImage: { width: "100%", height: "100%", borderRadius: 14 },
+    section: { width: "90%", marginTop: 30 },
+    sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
+    sectionTitle: { fontSize: 20, fontWeight: "600", color: "#0D47A1" },
+    arrow: { fontSize: 18, color: "#0D47A1" },
+    bannerRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
+    bannerOption: { width: "48%", marginBottom: 10 },
+    bannerThumb: { width: "100%", height: 100, borderRadius: 8 },
+    colorsGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
+    colorOption: { width: "22%", height: 60, borderRadius: 8, marginBottom: 10 },
+    selectedItem: { borderWidth: 3, borderColor: "#0D47A1" },
+    framePreviewContainer: { alignItems: "center", justifyContent: "center", marginTop: 40, width: 230, height: "auto", position: "relative" },
+    frameCircle: { width: 160, height: 160, borderRadius: 80, backgroundColor: "#EEE", alignItems: "center", justifyContent: "center", overflow: "hidden" },
+    profileImage: { width: 130, height: 130, borderRadius: 65, zIndex: 1 },
+    molduraPreviewImage: { position: "absolute", width: 170, height: 170, borderRadius: 85, zIndex: 10 },
+    borderCircle: { width: 160, height: 160, borderRadius: 80, alignItems: "center", justifyContent: "center", overflow: "hidden", position: "relative", zIndex: 2 },
+    frameOption: { width: "48%", height: 140, marginBottom: 10, borderRadius: 10, backgroundColor: "#EEE", alignItems: "center", justifyContent: "center" },
+    frameThumb: { width: "100%", height: "100%", borderRadius: 10 },
+    buttonRow: { flexDirection: "column", justifyContent: "center", alignItems: "center", gap: 10, marginTop: 40 },
+    topSaveContainer: { width: "90%", alignItems: "center", marginTop: 10 },
+    topSaveButton: { backgroundColor: "#0D47A1", paddingVertical: 12, paddingHorizontal: 40, borderRadius: 8 },
+    topSaveButtonText: { color: "#FFF", fontSize: 18, fontWeight: "bold" },
+    saveBannerButton: { backgroundColor: "#4CAF50", paddingVertical: 12, paddingHorizontal: 20, borderRadius: 8, alignItems: "center", marginTop: 10 },
+    saveBannerButtonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+    frameOutside: { position: "absolute", width: 265, height: 265, top: -58, right: -25, zIndex: 3 },
+    previewLabel: { marginTop: 45, fontSize: 14, fontWeight: "600", color: "#333" },
+    chooseText: { marginTop: 10, fontSize: 11, fontWeight: "600", color: "#333", textAlign: "center", letterSpacing: 0.3 },
+    imageButtonRow: { flexDirection: "row", justifyContent: "space-between", width: "130%", marginTop: 15, gap: 15 },
+    imageButton: { flex: 1, paddingVertical: 14, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+    imageButtonText: { color: "#FFF", fontSize: 15, fontWeight: "600", textAlign: "center" },
+    bottomButtonsRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", width: "90%", marginTop: 40, marginBottom: 60, gap: 15 },
+    saveButton: { backgroundColor: "#4CAF50", paddingVertical: 14, paddingHorizontal: 10, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+    removeButton: { backgroundColor: "#E53935", paddingVertical: 14, paddingHorizontal: 10, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+    saveButtonText: { color: "#FFF", fontSize: 15, fontWeight: "bold", textAlign: "center" },
+    removeButtonText: { color: "#FFF", fontSize: 15, fontWeight: "bold", textAlign: "center" },
+    infoSection: { width: "90%", marginTop: 40, marginBottom: 80, alignItems: "center" },
+    infoTitleRow: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", marginBottom: 10 },
+    infoTitle: { fontSize: 20, fontWeight: "700", color: "#000" },
+    infoBox: { width: "100%", backgroundColor: "#FFF", borderWidth: 2, borderColor: "#000", borderRadius: 14, padding: 18, shadowColor: "#000", shadowOpacity: 0.08, shadowOffset: { width: 0, height: 2 }, shadowRadius: 3, elevation: 2 },
+    input: { borderWidth: 1, borderColor: "#CCC", borderRadius: 8, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15, marginBottom: 12, color: "#333" },
+    passwordContainer: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: "#CCC", borderRadius: 8, paddingHorizontal: 10, marginBottom: 12 },
+    infoButtonsRow: { flexDirection: "row", justifyContent: "space-between", marginTop: 15, gap: 12 },
+    infoButton: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: "center", justifyContent: "center" },
+    infoButtonText: { color: "#FFF", fontWeight: "700", fontSize: 15, textAlign: "center" },
+    modalOverlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.4)", alignItems: "center", justifyContent: "center" },
+    modalBox: { width: "80%", backgroundColor: "#FFF", padding: 25, borderRadius: 12, alignItems: "center" },
+    modalText: { fontSize: 16, fontWeight: "600", color: "#333", textAlign: "center", marginBottom: 20 },
+    modalButtonsRow: { flexDirection: "row", justifyContent: "space-between", width: "100%", gap: 10 },
+    modalButton: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: "center" },
+    modalButtonText: { color: "#FFF", fontSize: 15, fontWeight: "600" },
+    bannerButtonsRow: { flexDirection: "row", justifyContent: "space-between", width: "90%", marginTop: 20, gap: 12 },
+    bannerButton: { flex: 1, paddingVertical: 14, borderRadius: 8, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOpacity: 0.15, shadowOffset: { width: 0, height: 2 }, shadowRadius: 3, elevation: 3 },
+    bannerButtonText: { color: "#FFF", fontSize: 15, fontWeight: "700", textAlign: "center" },
+    sectionTitleRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+    readyImagesContainer: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      justifyContent: "center",
+      gap: 10,
+      marginBottom: 20,
+    },
+    readyImageWrapper: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      overflow: "hidden",
+      borderWidth: 2,
+      borderColor: "#DDD",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    readyImage: {
+      width: "100%",
+      height: "100%",
+      borderRadius: 40,
+    },
+    popupOverlay: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(0,0,0,0.6)",
+      alignItems: "center",
+      justifyContent: "center",
+      zIndex: 9999, // força a ficar por cima
+      elevation: 20, // Android
+    },
+    popupBox: {
+      width: "88%",
+      backgroundColor: "#FFF",
+      borderRadius: 16,
+      paddingVertical: 28,
+      paddingHorizontal: 22,
+      alignItems: "center",
+      justifyContent: "center",
+      shadowColor: "#000",
+      shadowOpacity: 0.3,
+      shadowOffset: { width: 0, height: 4 },
+      shadowRadius: 8,
+      elevation: 12,
+      zIndex: 1001,
+    },
+    popupTitle: {
+      fontSize: 18,
+      fontWeight: "700",
+      color: "#0D47A1",
+      marginBottom: 15,
+      textAlign: "center",
+    },
+    popupButtonsRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      width: "100%",
+      marginTop: 10,
+      gap: 10,
+    },
+    popupButton: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: 8,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    popupButtonText: {
+      color: "#FFF",
+      fontSize: 15,
+      fontWeight: "700",
+    },
+  });
