@@ -18,7 +18,6 @@ import {
 } from "react-native";
 
 const { width } = Dimensions.get("window");
-
 export default function Configuracoes() {
   const navigation = useNavigation();
   const scrollX = useRef(new Animated.Value(0)).current;
@@ -31,13 +30,11 @@ export default function Configuracoes() {
   const [profileImage, setProfileImage] = useState(null);
   const [showImageModal, setShowImageModal] = useState(false);
   const [selectedReadyImage, setSelectedReadyImage] = useState(null);
-
   // 🔹 Moldura e borda
   const [selectedFrame, setSelectedFrame] = useState(null);
   const [selectedBorderColor, setSelectedBorderColor] = useState(null);
   const [expandedFrames, setExpandedFrames] = useState(false);
   const [expandedBorderColors, setExpandedBorderColors] = useState(false);
-
   // 🔹 Informações pessoais
   const [nome, setNome] = useState("");
   const [usuario, setUsuario] = useState("");
@@ -45,16 +42,13 @@ export default function Configuracoes() {
   const [senha, setSenha] = useState("");
   const [senhaVisivel, setSenhaVisivel] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-
   // 🔹 animação na seleção de moldura
   const frameScale = useRef(new Animated.Value(1)).current;
-
   // banners principais
   const imagens = [
     { id: 1, nome: "Ajuda", uri: require("../../assets/images/bannerajuda.png"), destino: "Ajuda" },
     { id: 2, nome: "Sobre", uri: require("../../assets/images/bannersobre.png"), destino: "Sobre" },
   ];
-
   // banners do usuário
   const banners = [
     { id: 1, uri: require("../../assets/images/banner1.png") },
@@ -62,22 +56,20 @@ export default function Configuracoes() {
     { id: 3, uri: require("../../assets/images/banner3.png") },
     { id: 4, uri: require("../../assets/images/banner4.png") },
   ];
-
   // cores do banner e da borda
   const cores = [
     "#795548", "#9C27B0", "#0D47A1", "#64B5F6",
     "#81C784", "#2E7D32", "#FFEB3B", "#FB8C00",
     "#F44336", "#E91E63", "#9E9E9E", "#000000",
   ];
-
   // molduras
   const molduras = [
+    { id: "remove", image: require("../../assets/images/proibido.png"), isRemoveButton: true },
     { id: 1, nome: "Moldura 1", uri: require("../../assets/images/moldura1.png") },
-    { id: 2, nome: "Moldura 2", uri: require("../../assets/images/moldura1.png") },
-    { id: 3, nome: "Moldura 3", uri: require("../../assets/images/moldura1.png") },
-    { id: 4, nome: "Moldura 4", uri: require("../../assets/images/moldura1.png") },
+    { id: 2, nome: "Moldura 2", uri: require("../../assets/images/moldura2.png") },
+    { id: 3, nome: "Moldura 3", uri: require("../../assets/images/moldura3.png") },
+    { id: 4, nome: "Moldura 4", uri: require("../../assets/images/moldura4.png") },
   ];
-
   // carrossel automático
   useEffect(() => {
     const interval = setInterval(() => {
@@ -104,7 +96,6 @@ export default function Configuracoes() {
     const index = Math.round(event.nativeEvent.contentOffset.x / width);
     setCurrentIndex(index);
   };
-
   // salvar banner, cor e moldura
   const handleSalvar = async () => {
     try {
@@ -114,7 +105,6 @@ export default function Configuracoes() {
       } else if (selectedColor) {
         await AsyncStorage.setItem("bannerSelecionado", JSON.stringify({ type: "color", value: selectedColor }));
       }
-
       // salva moldura/borda
       if (selectedFrame || selectedBorderColor) {
         await AsyncStorage.setItem(
@@ -131,7 +121,6 @@ export default function Configuracoes() {
       console.log("Erro ao salvar configurações:", error);
     }
   };
-
   // função para escolher imagem da galeria
   const handleEscolherImagemGaleria = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -150,7 +139,6 @@ export default function Configuracoes() {
       setProfileImage(result.assets[0].uri);
     }
   };
-
   // (você pode implementar handleImagemPronta depois)
   const handleImagemPronta = () => {
     setShowImageModal(true);
@@ -175,7 +163,6 @@ export default function Configuracoes() {
       console.log("Erro ao remover moldura/cor/imagem:", error);
     }
   };
-
   // 🔹 Salva apenas o banner e vai direto pro Perfil
   const handleSalvarBannerDireto = async () => {
     try {
@@ -227,15 +214,24 @@ export default function Configuracoes() {
 
   const bannersVisiveis = expandedBanners ? banners : banners.slice(0, 2);
   const coresVisiveis = expandedColors ? cores : cores.slice(0, 4);
-  const moldurasVisiveis = expandedFrames ? molduras : molduras.slice(0, 2);
   const bordasVisiveis = expandedBorderColors ? cores : cores.slice(0, 4);
+  const moldurasVisiveis = expandedFrames ? molduras : molduras.slice(0, 2);
+  // Pega apenas a primeira moldura
+  const primeiraMoldura = moldurasVisiveis[0];
+  // O restante das molduras, exceto a primeira
+  const outrasMolduras = moldurasVisiveis.slice(1);
+  // Cria o array final com o quadrado de remover + primeira moldura, depois as outras
+  const moldurasComRemover = [
+    { id: "remover", uri: require("../../assets/images/proibido.png"), isRemove: true },
+    primeiraMoldura,
+    ...outrasMolduras,
+  ];
 
   const selectedItem = selectedBanner
     ? { type: "banner", value: selectedBanner }
     : selectedColor
       ? { type: "color", value: selectedColor }
       : null;
-
   // 🔹 Salva apenas o banner (imagem ou cor)
   const handleSalvarBanner = async () => {
     try {
@@ -259,7 +255,6 @@ export default function Configuracoes() {
       console.log("Erro ao salvar banner:", error);
     }
   };
-
   // 🔹 Salva moldura, borda e imagem de perfil
   const handleSalvarMoldura = async () => {
     try {
@@ -281,7 +276,6 @@ export default function Configuracoes() {
       console.log("Erro ao salvar moldura/cor/imagem:", error);
     }
   };
-
   // 🔹 Salvar informações pessoais
   const handleSalvarInfo = async () => {
     try {
@@ -292,7 +286,6 @@ export default function Configuracoes() {
       console.log("Erro ao salvar informações pessoais:", error);
     }
   };
-
   // 🔹 Confirmar logout
   const handleConfirmarLogout = async () => {
     try {
@@ -303,7 +296,6 @@ export default function Configuracoes() {
       console.log("Erro ao deslogar:", error);
     }
   };
-
   // 🔹 Carregar informações pessoais salvas
   useEffect(() => {
     const carregarInfo = async () => {
@@ -322,7 +314,6 @@ export default function Configuracoes() {
 
     carregarInfo();
   }, []);
-
   // 🔹 Função para remover banner
   const handleRetirarBanner = async () => {
     try {
@@ -361,7 +352,6 @@ export default function Configuracoes() {
             ))}
           </View>
         </View>
-
         {/* 🔹 Preview do banner */}
         <View style={styles.previewContainer}>
           <View style={styles.previewBox}>
@@ -373,7 +363,6 @@ export default function Configuracoes() {
           </View>
           <Text style={styles.previewLabel}>Como seu banner está</Text>
         </View>
-
         {/* 🔹 Banners do usuário */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -404,7 +393,6 @@ export default function Configuracoes() {
             ))}
           </View>
         </View>
-
         {/* 🔹 Cores sólidas */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -433,7 +421,6 @@ export default function Configuracoes() {
             ))}
           </View>
         </View>
-
         {/* Botões Salvar / Retirar Banner */}
         <View style={styles.bannerButtonsRow}>
           <TouchableOpacity
@@ -450,7 +437,6 @@ export default function Configuracoes() {
             <Text style={styles.bannerButtonText}>Retirar banner</Text>
           </TouchableOpacity>
         </View>
-
         {/* 🔹 Preview da Moldura e/ou Borda */}
         <View style={styles.framePreviewContainer}>
           <View
@@ -471,7 +457,6 @@ export default function Configuracoes() {
               style={styles.profileImage}
             />
           </View>
-
           {/* 🔹 Moldura fora do círculo */}
           {selectedFrame && (
             <Image
@@ -482,12 +467,10 @@ export default function Configuracoes() {
           )}
 
           <Text style={styles.previewLabel}>Como seu perfil está</Text>
-
           {/* 🔹 Texto adicional */}
           <Text style={styles.chooseText}>
             ESCOLHA SUA IMAGEM DE PERFIL
           </Text>
-
           {/* 🔹 Botões lado a lado */}
           <View style={styles.imageButtonRow}>
             <TouchableOpacity
@@ -505,7 +488,6 @@ export default function Configuracoes() {
             </TouchableOpacity>
           </View>
         </View>
-
         {/* 🔹 Molduras */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -520,26 +502,32 @@ export default function Configuracoes() {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.bannerRow}>
-            {moldurasVisiveis.map((item) => (
+          <View style={styles.frameOptionsRow}>
+            {moldurasComRemover.map((item) => (
               <TouchableOpacity
                 key={item.id}
-                onPress={() => handleSelecionarMoldura(item)}
+                onPress={() => {
+                  if (item.isRemove) {
+                    setSelectedFrame(null); // remove moldura
+                  } else {
+                    handleSelecionarMoldura(item);
+                  }
+                }}
                 style={[
-                  styles.frameOption,
-                  selectedFrame?.id === item.id && styles.selectedItem,
+                  !item.isRemove && styles.frameOption,
+                  !item.isRemove && selectedFrame?.id === item.id && styles.selectedItem,
+                  item.isRemove && styles.frameRemover,
                 ]}
               >
                 <Image
                   source={item.uri}
-                  style={styles.frameThumb}
+                  style={[styles.frameThumb, item.isRemove && styles.removerIcon]}
                   resizeMode="contain"
                 />
               </TouchableOpacity>
             ))}
           </View>
         </View>
-
         {/* 🔹 Cores de borda */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -568,7 +556,6 @@ export default function Configuracoes() {
             ))}
           </View>
         </View>
-
         {/* 🔹 Botões finais */}
         <View style={styles.bottomButtonsRow}>
           <TouchableOpacity style={[styles.saveButton, { flex: 1 }]} onPress={handleSalvarMoldura}>
@@ -579,7 +566,6 @@ export default function Configuracoes() {
             <Text style={styles.removeButtonText}>Retirar moldura, cor ou imagem</Text>
           </TouchableOpacity>
         </View>
-
         {/* 🔹 Informações Pessoais */}
         <View style={styles.infoSection}>
           <View style={styles.infoTitleRow}>
@@ -596,7 +582,6 @@ export default function Configuracoes() {
               value={nome}
               onChangeText={setNome}
             />
-
             {/* Usuário */}
             <TextInput
               style={styles.input}
@@ -605,7 +590,6 @@ export default function Configuracoes() {
               value={usuario}
               onChangeText={setUsuario}
             />
-
             {/* E-mail */}
             <TextInput
               style={styles.input}
@@ -616,7 +600,6 @@ export default function Configuracoes() {
               keyboardType="email-address"
               autoCapitalize="none"
             />
-
             {/* Senha */}
             <View style={styles.passwordContainer}>
               <TextInput
@@ -631,7 +614,6 @@ export default function Configuracoes() {
                 <Ionicons name={senhaVisivel ? 'eye-off' : 'eye'} size={22} color="#666" />
               </TouchableOpacity>
             </View>
-
             {/* Botões */}
             <View style={styles.infoButtonsRow}>
               <TouchableOpacity
@@ -649,7 +631,6 @@ export default function Configuracoes() {
               </TouchableOpacity>
             </View>
           </View>
-
           {/* 🔹 Modal de confirmação de logout */}
           {showLogoutModal && (
             <View style={styles.modalOverlay}>
@@ -735,7 +716,6 @@ export default function Configuracoes() {
       )}
     </>
   );
-
 }
 
 const styles = StyleSheet.create({
@@ -747,7 +727,7 @@ const styles = StyleSheet.create({
   previewContainer: { width: "100%", alignItems: "center", marginTop: 20, marginBottom: 25 },
   previewBox: { width: "90%", height: 180, borderRadius: 14, overflow: "hidden", backgroundColor: "#EEE", shadowColor: "#000", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.2, shadowRadius: 4, elevation: 4 },
   previewImage: { width: "100%", height: "100%", borderRadius: 14 },
-  section: { width: "90%", marginTop: 30 },
+  section: { width: "90%", marginTop: 15 },
   sectionHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 10 },
   sectionTitle: { fontSize: 20, fontWeight: "600", color: "#0D47A1" },
   arrow: { fontSize: 18, color: "#0D47A1" },
@@ -762,7 +742,7 @@ const styles = StyleSheet.create({
   profileImage: { width: 130, height: 130, borderRadius: 65, zIndex: 1 },
   molduraPreviewImage: { position: "absolute", width: 170, height: 170, borderRadius: 85, zIndex: 10 },
   borderCircle: { width: 160, height: 160, borderRadius: 80, alignItems: "center", justifyContent: "center", overflow: "hidden", position: "relative", zIndex: 2 },
-  frameOption: { width: "48%", height: 140, marginBottom: 10, borderRadius: 10, backgroundColor: "#EEE", alignItems: "center", justifyContent: "center" },
+  frameOption: { width: "40%", height: 240, marginBottom: 10, borderRadius: 10, alignItems: "center", justifyContent: "center" },
   frameThumb: { width: "100%", height: "100%", borderRadius: 10 },
   buttonRow: { flexDirection: "column", justifyContent: "center", alignItems: "center", gap: 10, marginTop: 40 },
   topSaveContainer: { width: "90%", alignItems: "center", marginTop: 10 },
@@ -776,12 +756,12 @@ const styles = StyleSheet.create({
   imageButtonRow: { flexDirection: "row", justifyContent: "space-between", width: "130%", marginTop: 15, gap: 15 },
   imageButton: { flex: 1, paddingVertical: 14, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   imageButtonText: { color: "#FFF", fontSize: 15, fontWeight: "600", textAlign: "center" },
-  bottomButtonsRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", width: "90%", marginTop: 40, marginBottom: 60, gap: 15 },
+  bottomButtonsRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", width: "90%", marginTop: 40, marginBottom: 15, gap: 15 },
   saveButton: { backgroundColor: "#4CAF50", paddingVertical: 14, paddingHorizontal: 10, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   removeButton: { backgroundColor: "#E53935", paddingVertical: 14, paddingHorizontal: 10, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   saveButtonText: { color: "#FFF", fontSize: 15, fontWeight: "bold", textAlign: "center" },
   removeButtonText: { color: "#FFF", fontSize: 15, fontWeight: "bold", textAlign: "center" },
-  infoSection: { width: "90%", marginTop: 40, marginBottom: 80, alignItems: "center" },
+  infoSection: { width: "90%", marginTop: 20, marginBottom: 10, alignItems: "center" },
   infoTitleRow: { flexDirection: "row", alignItems: "center", alignSelf: "flex-start", marginBottom: 10 },
   infoTitle: { fontSize: 20, fontWeight: "700", color: "#000" },
   infoBox: { width: "100%", backgroundColor: "#FFF", borderWidth: 2, borderColor: "#000", borderRadius: 14, padding: 18, shadowColor: "#000", shadowOpacity: 0.08, shadowOffset: { width: 0, height: 2 }, shadowRadius: 3, elevation: 2 },
@@ -809,4 +789,24 @@ const styles = StyleSheet.create({
   popupButtonsRow: { flexDirection: "row", justifyContent: "space-between", width: "100%", marginTop: 10, gap: 10 },
   popupButton: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   popupButtonText: { color: "#FFF", fontSize: 15, fontWeight: "700" },
+  frameOptionsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "flex-start",
+  },
+  frameRemover: {
+    width: "40%",          // ligeiramente menor que as outras molduras
+    height: 220,           // altura reduzida para ser mais sutil
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,        // borda sutil
+    borderColor: "#CCC",
+    backgroundColor: "#FFF",
+  },
+  removerIcon: {
+    width: 80,
+    height: 80,
+    resizeMode: "contain",
+  }
 });
