@@ -51,10 +51,12 @@ export default function Configuracoes() {
   ];
   // banners do usuário
   const banners = [
+    { id: "nulo", uri: require("../../assets/images/proibido.png"), isRemove: true },
     { id: 1, uri: require("../../assets/images/banner1.png") },
     { id: 2, uri: require("../../assets/images/banner2.png") },
     { id: 3, uri: require("../../assets/images/banner3.png") },
     { id: 4, uri: require("../../assets/images/banner4.png") },
+    { id: 5, uri: require("../../assets/images/banner5.png") },
   ];
   // cores do banner e da borda
   const cores = [
@@ -188,6 +190,13 @@ export default function Configuracoes() {
   };
 
   const handleSelecionarBanner = (item) => {
+    if (item.isRemove) {
+      setSelectedBanner(null);
+      AsyncStorage.removeItem("bannerSelecionado");
+      Alert.alert("Banner removido", "Agora seu perfil está sem banner.");
+      return;
+    }
+
     setSelectedBanner(item.uri);
     setSelectedColor(null);
   };
@@ -378,19 +387,34 @@ export default function Configuracoes() {
           </View>
 
           <View style={styles.bannerRow}>
-            {bannersVisiveis.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                onPress={() => handleSelecionarBanner(item)}
-                style={[
-                  styles.bannerOption,
-                  selectedBanner === item.uri && styles.selectedItem,
-                ]}
-                activeOpacity={0.8}
-              >
-                <Image source={item.uri} style={styles.bannerThumb} />
-              </TouchableOpacity>
-            ))}
+            {bannersVisiveis.map((item) => {
+              const isSelected =
+                selectedBanner === item.uri || (item.isRemove && selectedBanner === null);
+
+              return (
+                <TouchableOpacity
+                  key={item.id}
+                  onPress={() => handleSelecionarBanner(item)}
+                  style={[
+                    styles.bannerOption,
+                    isSelected && {
+                      borderWidth: 3,
+                      borderColor: item.isRemove ? "#E53935" : "#0D47A1",
+                    },
+                  ]}
+                  activeOpacity={0.8}
+                >
+                  {!item.isRemove ? (
+                    <Image source={item.uri} style={styles.bannerThumb} />
+                  ) : (
+                    <Image
+                      source={require("../../assets/images/nulo.png")}
+                      style={[styles.bannerThumb, { resizeMode: "contain" }]}
+                    />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
         {/* 🔹 Cores sólidas */}
@@ -717,7 +741,6 @@ export default function Configuracoes() {
     </>
   );
 }
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#FFF" },
   carouselWrapper: { position: "relative", width: "100%" },
@@ -732,8 +755,8 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 20, fontWeight: "600", color: "#0D47A1" },
   arrow: { fontSize: 18, color: "#0D47A1" },
   bannerRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
-  bannerOption: { width: "48%", marginBottom: 10 },
-  bannerThumb: { width: "100%", height: 100, borderRadius: 8 },
+  bannerOption: { width: "48%", height: 100, marginBottom: 10, borderRadius: 8, backgroundColor: "#FFF", borderWidth: 2, borderColor: "#e0e0e0", borderColor: "#DDD", alignItems: "center", justifyContent: "center", padding: 4 },
+  bannerThumb: { width: "100%", height: 100, borderRadius: 6 },
   colorsGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
   colorOption: { width: "22%", height: 60, borderRadius: 8, marginBottom: 10 },
   selectedItem: { borderWidth: 3, borderColor: "#0D47A1" },
@@ -789,24 +812,7 @@ const styles = StyleSheet.create({
   popupButtonsRow: { flexDirection: "row", justifyContent: "space-between", width: "100%", marginTop: 10, gap: 10 },
   popupButton: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   popupButtonText: { color: "#FFF", fontSize: 15, fontWeight: "700" },
-  frameOptionsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "flex-start",
-  },
-  frameRemover: {
-    width: "40%",          // ligeiramente menor que as outras molduras
-    height: 220,           // altura reduzida para ser mais sutil
-    borderRadius: 10,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,        // borda sutil
-    borderColor: "#CCC",
-    backgroundColor: "#FFF",
-  },
-  removerIcon: {
-    width: 80,
-    height: 80,
-    resizeMode: "contain",
-  }
+  frameOptionsRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-start" },
+  frameRemover: { width: "40%", height: 220, borderRadius: 10, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#CCC", backgroundColor: "#FFF" },
+  removerIcon: { width: 80, height: 80, resizeMode: "contain" }
 });
