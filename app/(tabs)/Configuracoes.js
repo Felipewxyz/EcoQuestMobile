@@ -42,6 +42,12 @@ export default function Configuracoes() {
   const [senha, setSenha] = useState("");
   const [senhaVisivel, setSenhaVisivel] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [popupBannerRemoved, setPopupBannerRemoved] = useState(false);
+  const removerBanner = () => {
+    setSelectedBanner(null);
+    setSelectedColor(null);
+    setPopupBannerRemoved(true); // 👈 exibe popup
+  };
   // 🔹 animação na seleção de moldura
   const frameScale = useRef(new Animated.Value(1)).current;
   // banners principais
@@ -66,11 +72,12 @@ export default function Configuracoes() {
   ];
   // molduras
   const molduras = [
-    { id: "remove", image: require("../../assets/images/proibido.png"), isRemoveButton: true },
+    { id: "nulo", uri: require("../../assets/images/proibido.png"), isRemove: true },
     { id: 1, nome: "Moldura 1", uri: require("../../assets/images/moldura1.png") },
     { id: 2, nome: "Moldura 2", uri: require("../../assets/images/moldura2.png") },
     { id: 3, nome: "Moldura 3", uri: require("../../assets/images/moldura3.png") },
     { id: 4, nome: "Moldura 4", uri: require("../../assets/images/moldura4.png") },
+    { id: 5, nome: "Moldura 5", uri: require("../../assets/images/moldura5.png") },
   ];
   // carrossel automático
   useEffect(() => {
@@ -166,7 +173,7 @@ export default function Configuracoes() {
     }
   };
   // 🔹 Salva apenas o banner e vai direto pro Perfil
-  const handleSalvarBannerDireto = async () => {
+  const handleSalvarBanner = async () => {
     try {
       if (selectedBanner) {
         await AsyncStorage.setItem(
@@ -184,8 +191,9 @@ export default function Configuracoes() {
       }
 
       navigation.navigate("Perfil");
+
     } catch (error) {
-      console.log("Erro ao salvar banner direto:", error);
+      console.log("Erro ao salvar banner:", error);
     }
   };
 
@@ -193,7 +201,9 @@ export default function Configuracoes() {
     if (item.isRemove) {
       setSelectedBanner(null);
       AsyncStorage.removeItem("bannerSelecionado");
-      Alert.alert("Banner removido", "Agora seu perfil está sem banner.");
+      // MOSTRAR popup estilizado
+      setPopupBannerRemoved(true);
+
       return;
     }
 
@@ -225,45 +235,12 @@ export default function Configuracoes() {
   const coresVisiveis = expandedColors ? cores : cores.slice(0, 4);
   const bordasVisiveis = expandedBorderColors ? cores : cores.slice(0, 4);
   const moldurasVisiveis = expandedFrames ? molduras : molduras.slice(0, 2);
-  // Pega apenas a primeira moldura
-  const primeiraMoldura = moldurasVisiveis[0];
-  // O restante das molduras, exceto a primeira
-  const outrasMolduras = moldurasVisiveis.slice(1);
-  // Cria o array final com o quadrado de remover + primeira moldura, depois as outras
-  const moldurasComRemover = [
-    { id: "remover", uri: require("../../assets/images/proibido.png"), isRemove: true },
-    primeiraMoldura,
-    ...outrasMolduras,
-  ];
 
   const selectedItem = selectedBanner
     ? { type: "banner", value: selectedBanner }
     : selectedColor
       ? { type: "color", value: selectedColor }
       : null;
-  // 🔹 Salva apenas o banner (imagem ou cor)
-  const handleSalvarBanner = async () => {
-    try {
-      if (selectedBanner) {
-        await AsyncStorage.setItem(
-          "bannerSelecionado",
-          JSON.stringify({ type: "banner", value: selectedBanner })
-        );
-      } else if (selectedColor) {
-        await AsyncStorage.setItem(
-          "bannerSelecionado",
-          JSON.stringify({ type: "color", value: selectedColor })
-        );
-      } else {
-        alert("Selecione um banner ou uma cor primeiro!");
-        return;
-      }
-
-      navigation.navigate("Perfil");
-    } catch (error) {
-      console.log("Erro ao salvar banner:", error);
-    }
-  };
   // 🔹 Salva moldura, borda e imagem de perfil
   const handleSalvarMoldura = async () => {
     try {
@@ -527,25 +504,32 @@ export default function Configuracoes() {
           </View>
 
           <View style={styles.frameOptionsRow}>
-            {moldurasComRemover.map((item) => (
+            {moldurasVisiveis.map((item) => (
               <TouchableOpacity
                 key={item.id}
                 onPress={() => {
                   if (item.isRemove) {
-                    setSelectedFrame(null); // remove moldura
+                    setSelectedFrame("nulo");
                   } else {
                     handleSelecionarMoldura(item);
                   }
                 }}
                 style={[
-                  !item.isRemove && styles.frameOption,
+                  item.isRemove ? styles.frameRemover : styles.frameOption,
+
+                  // 🔹 Moldura normal selecionada → azul
                   !item.isRemove && selectedFrame?.id === item.id && styles.selectedItem,
-                  item.isRemove && styles.frameRemover,
+
+                  // 🔹 Moldura nula selecionada → vermelho
+                  item.isRemove && selectedFrame === "nulo" && styles.selectedRemove,
                 ]}
               >
                 <Image
                   source={item.uri}
-                  style={[styles.frameThumb, item.isRemove && styles.removerIcon]}
+                  style={[
+                    styles.frameThumb,
+                    item.isRemove && styles.removerIcon
+                  ]}
                   resizeMode="contain"
                 />
               </TouchableOpacity>
@@ -681,63 +665,81 @@ export default function Configuracoes() {
           )}
         </View>
       </ScrollView >
-      {/* 🔹 Pop-up de seleção de imagens prontas */}
-      {showImageModal && (
-        <View style={styles.popupOverlay}>
-          <View style={styles.popupBox}>
-            <Text style={styles.popupTitle}>Escolha uma imagem de perfil pronta</Text>
+      {popupBannerRemoved && (
+        <View style={styles.bannerRemovedOverlay}>
+          <View style={styles.bannerRemovedBox}>
+            <Text style={styles.bannerRemovedTitle}>Banner removido</Text>
+            <Text style={styles.bannerRemovedSubtitle}>Seu banner foi removido com sucesso.</Text>
 
-            <View style={styles.readyImagesContainer}>
-              {[
-                require("../../assets/images/foto1.png"),
-                require("../../assets/images/foto2.png"),
-                require("../../assets/images/foto3.png"),
-                require("../../assets/images/foto4.png"),
-                require("../../assets/images/foto5.png"),
-                require("../../assets/images/foto6.png"),
-              ].map((img, index) => (
-                <TouchableOpacity
-                  key={index}
-                  onPress={() => setSelectedReadyImage(img)}
-                  style={[
-                    styles.readyImageWrapper,
-                    selectedReadyImage === img && styles.selectedItem,
-                  ]}
-                >
-                  <Image source={img} style={styles.readyImage} resizeMode="cover" />
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <View style={styles.popupButtonsRow}>
-              <TouchableOpacity
-                style={[styles.popupButton, { backgroundColor: "#BDBDBD" }]}
-                onPress={() => setShowImageModal(false)}
-              >
-                <Text style={styles.popupButtonText}>Fechar</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.popupButton, { backgroundColor: "#4CAF50" }]}
-                onPress={() => {
-                  if (!selectedReadyImage) {
-                    Alert.alert(
-                      "Selecione uma imagem",
-                      "Escolha uma das imagens prontas antes de confirmar."
-                    );
-                    return;
-                  }
-                  setProfileImage(selectedReadyImage);
-                  setShowImageModal(false);
-                  setSelectedReadyImage(null);
-                }}
-              >
-                <Text style={styles.popupButtonText}>Confirmar</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity
+              style={styles.bannerRemovedButton}
+              onPress={() => setPopupBannerRemoved(false)}
+            >
+              <Text style={styles.bannerRemovedButtonText}>OK</Text>
+            </TouchableOpacity>
           </View>
         </View>
-      )}
+      )
+      }
+      {/* 🔹 Pop-up de seleção de imagens prontas */}
+      {
+        showImageModal && (
+          <View style={styles.popupOverlay}>
+            <View style={styles.popupBox}>
+              <Text style={styles.popupTitle}>Escolha uma imagem de perfil pronta</Text>
+
+              <View style={styles.readyImagesContainer}>
+                {[
+                  require("../../assets/images/foto1.png"),
+                  require("../../assets/images/foto2.png"),
+                  require("../../assets/images/foto3.png"),
+                  require("../../assets/images/foto4.png"),
+                  require("../../assets/images/foto5.png"),
+                  require("../../assets/images/foto6.png"),
+                ].map((img, index) => (
+                  <TouchableOpacity
+                    key={index}
+                    onPress={() => setSelectedReadyImage(img)}
+                    style={[
+                      styles.readyImageWrapper,
+                      selectedReadyImage === img && styles.selectedItem,
+                    ]}
+                  >
+                    <Image source={img} style={styles.readyImage} resizeMode="cover" />
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              <View style={styles.popupButtonsRow}>
+                <TouchableOpacity
+                  style={[styles.popupButton, { backgroundColor: "#BDBDBD" }]}
+                  onPress={() => setShowImageModal(false)}
+                >
+                  <Text style={styles.popupButtonText}>Fechar</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.popupButton, { backgroundColor: "#4CAF50" }]}
+                  onPress={() => {
+                    if (!selectedReadyImage) {
+                      Alert.alert(
+                        "Selecione uma imagem",
+                        "Escolha uma das imagens prontas antes de confirmar."
+                      );
+                      return;
+                    }
+                    setProfileImage(selectedReadyImage);
+                    setShowImageModal(false);
+                    setSelectedReadyImage(null);
+                  }}
+                >
+                  <Text style={styles.popupButtonText}>Confirmar</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </View>
+        )
+      }
     </>
   );
 }
@@ -755,17 +757,18 @@ const styles = StyleSheet.create({
   sectionTitle: { fontSize: 20, fontWeight: "600", color: "#0D47A1" },
   arrow: { fontSize: 18, color: "#0D47A1" },
   bannerRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
-  bannerOption: { width: "48%", height: 100, marginBottom: 10, borderRadius: 8, backgroundColor: "#FFF", borderWidth: 2, borderColor: "#e0e0e0", borderColor: "#DDD", alignItems: "center", justifyContent: "center", padding: 4 },
+  bannerOption: { width: "48%", height: 100, marginBottom: 10, borderRadius: 8, backgroundColor: "#FFF", borderWidth: 2, borderColor: "#DDD", alignItems: "center", justifyContent: "center", padding: 4 },
   bannerThumb: { width: "100%", height: 100, borderRadius: 6 },
   colorsGrid: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between" },
   colorOption: { width: "22%", height: 60, borderRadius: 8, marginBottom: 10 },
   selectedItem: { borderWidth: 3, borderColor: "#0D47A1" },
+  selectedRemove: { borderWidth: 3, borderColor: "#E53935" },
   framePreviewContainer: { alignItems: "center", justifyContent: "center", marginTop: 80, width: 230, height: "auto", position: "relative" },
   frameCircle: { width: 160, height: 160, borderRadius: 80, backgroundColor: "#EEE", alignItems: "center", justifyContent: "center", overflow: "hidden" },
   profileImage: { width: 130, height: 130, borderRadius: 65, zIndex: 1 },
   molduraPreviewImage: { position: "absolute", width: 170, height: 170, borderRadius: 85, zIndex: 10 },
   borderCircle: { width: 160, height: 160, borderRadius: 80, alignItems: "center", justifyContent: "center", overflow: "hidden", position: "relative", zIndex: 2 },
-  frameOption: { width: "40%", height: 240, marginBottom: 10, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  frameOption: { width: "48%", height: 220, marginBottom: 12, borderRadius: 12, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "#DDD", backgroundColor: "#FFF" },
   frameThumb: { width: "100%", height: "100%", borderRadius: 10 },
   buttonRow: { flexDirection: "column", justifyContent: "center", alignItems: "center", gap: 10, marginTop: 40 },
   topSaveContainer: { width: "90%", alignItems: "center", marginTop: 10 },
@@ -812,7 +815,13 @@ const styles = StyleSheet.create({
   popupButtonsRow: { flexDirection: "row", justifyContent: "space-between", width: "100%", marginTop: 10, gap: 10 },
   popupButton: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: "center", justifyContent: "center" },
   popupButtonText: { color: "#FFF", fontSize: 15, fontWeight: "700" },
-  frameOptionsRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "flex-start" },
-  frameRemover: { width: "40%", height: 220, borderRadius: 10, alignItems: "center", justifyContent: "center", borderWidth: 1, borderColor: "#CCC", backgroundColor: "#FFF" },
-  removerIcon: { width: 80, height: 80, resizeMode: "contain" }
+  frameOptionsRow: { flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", width: "100%" },
+  frameRemover: { width: "48%", height: 220, marginBottom: 12, borderRadius: 12, alignItems: "center", justifyContent: "center", borderWidth: 2, borderColor: "#CCC", backgroundColor: "#FFF" },
+  removerIcon: { width: 80, height: 80, resizeMode: "contain" },
+  bannerRemovedOverlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", alignItems: "center", justifyContent: "center", zIndex: 5000 },
+  bannerRemovedBox: { width: "80%", backgroundColor: "#FFFFFF", paddingVertical: 25, paddingHorizontal: 20, borderRadius: 16, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOpacity: 0.25, shadowOffset: { width: 0, height: 4 }, shadowRadius: 10, elevation: 8 },
+  bannerRemovedTitle: { fontSize: 20, fontWeight: "700", color: "#0D47A1", marginBottom: 10, textAlign: "center" },
+  bannerRemovedSubtitle: { fontSize: 15, color: "#444", textAlign: "center", marginBottom: 20 },
+  bannerRemovedButton: { backgroundColor: "#0D47A1", paddingVertical: 12, paddingHorizontal: 40, borderRadius: 10, alignItems: "center", justifyContent: "center", shadowColor: "#000", shadowOpacity: 0.2, shadowOffset: { width: 0, height: 2 }, shadowRadius: 4 },
+  bannerRemovedButtonText: { color: "#FFF", fontSize: 16, fontWeight: "700" },
 });
