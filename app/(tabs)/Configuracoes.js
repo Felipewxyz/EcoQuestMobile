@@ -42,12 +42,10 @@ export default function Configuracoes() {
   const [senha, setSenha] = useState("");
   const [senhaVisivel, setSenhaVisivel] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [popupBannerRemoved, setPopupBannerRemoved] = useState(false);
-  const removerBanner = () => {
-    setSelectedBanner(null);
-    setSelectedColor(null);
-    setPopupBannerRemoved(true); // 👈 exibe popup
-  };
+  const [initialBannerState, setInitialBannerState] = useState(null);
+  const [hasChanges, setHasChanges] = useState(false);
+  const [savedMessage, setSavedMessage] = useState(false);
+  const [showGalleryPopup, setShowGalleryPopup] = useState(false);
   // 🔹 animação na seleção de moldura
   const frameScale = useRef(new Animated.Value(1)).current;
   // banners principais
@@ -66,9 +64,11 @@ export default function Configuracoes() {
   ];
   // cores do banner e da borda
   const cores = [
-    "#795548", "#9C27B0", "#0D47A1", "#64B5F6",
-    "#81C784", "#2E7D32", "#FFEB3B", "#FB8C00",
-    "#F44336", "#E91E63", "#9E9E9E", "#000000",
+    { id: "remover", isRemove: true, icon: require("../../assets/images/proibido.png") },
+    "#8B0000", "#FF0000", "#FF8C00", "#FFFF00",
+    "#ADFF2F", "#32CD32", "#008000", "#006400",
+    "#64B5F6", "#0D47A1", "#191970", "#6A5ACD",
+    "#FF1493", "#1C1C1C", "#D3D3D3"
   ];
   // molduras
   const molduras = [
@@ -108,26 +108,16 @@ export default function Configuracoes() {
   // salvar banner, cor e moldura
   const handleSalvar = async () => {
     try {
-      // salva banner
+      // salva apenas o banner
       if (selectedBanner) {
         await AsyncStorage.setItem("bannerSelecionado", JSON.stringify({ type: "banner", value: selectedBanner }));
       } else if (selectedColor) {
         await AsyncStorage.setItem("bannerSelecionado", JSON.stringify({ type: "color", value: selectedColor }));
       }
-      // salva moldura/borda
-      if (selectedFrame || selectedBorderColor) {
-        await AsyncStorage.setItem(
-          "molduraSelecionada",
-          JSON.stringify({
-            frame: selectedFrame,
-            borderColor: selectedBorderColor,
-          })
-        );
-      }
-
+      // não mexer em moldura/borda aqui
       navigation.navigate("Perfil");
     } catch (error) {
-      console.log("Erro ao salvar configurações:", error);
+      console.log("Erro ao salvar banner:", error);
     }
   };
   // função para escolher imagem da galeria
@@ -162,34 +152,59 @@ export default function Configuracoes() {
     setShowImageModal(false);
   };
 
+  const handleRetirarBorda = async () => {
+    try {
+      setSelectedBorderColor(null); // remove apenas a borda
+      // Não tocar em selectedFrame nem profileImage
+    } catch (error) {
+      console.log("Erro ao remover borda:", error);
+    }
+  };
+
   const handleRetirarMoldura = async () => {
     try {
-      await AsyncStorage.removeItem("molduraSelecionada");
-      setSelectedFrame(null);
-      setSelectedBorderColor(null);
-      setProfileImage(null); // ✅ limpa imagem escolhida também
+      setSelectedFrame(null); // remove só a moldura
     } catch (error) {
-      console.log("Erro ao remover moldura/cor/imagem:", error);
+      console.log("Erro ao remover moldura:", error);
     }
   };
   // 🔹 Salva apenas o banner e vai direto pro Perfil
   const handleSalvarBanner = async () => {
     try {
-      if (selectedBanner) {
+      let newState = { banner: null, color: null };
+
+      // Se remover
+      if (selectedBanner === null && selectedColor === null) {
+        await AsyncStorage.removeItem("bannerSelecionado");
+      }
+
+      // Se imagem
+      else if (selectedBanner) {
         await AsyncStorage.setItem(
           "bannerSelecionado",
           JSON.stringify({ type: "banner", value: selectedBanner })
         );
-      } else if (selectedColor) {
+        newState.banner = selectedBanner;
+      }
+
+      // Se cor
+      else if (selectedColor) {
         await AsyncStorage.setItem(
           "bannerSelecionado",
           JSON.stringify({ type: "color", value: selectedColor })
         );
-      } else {
-        alert("Selecione um banner ou uma cor primeiro!");
-        return;
+        newState.color = selectedColor;
       }
 
+      // Atualiza estado inicial → agora nada mudou novamente
+      setInitialBannerState(newState);
+      setHasChanges(false);
+
+      // Mostra mensagem "salvo!"
+      setSavedMessage(true);
+      setTimeout(() => setSavedMessage(false), 1800);
+
+      // Vai para o perfil
       navigation.navigate("Perfil");
 
     } catch (error) {
@@ -201,9 +216,6 @@ export default function Configuracoes() {
     if (item.isRemove) {
       setSelectedBanner(null);
       AsyncStorage.removeItem("bannerSelecionado");
-      // MOSTRAR popup estilizado
-      setPopupBannerRemoved(true);
-
       return;
     }
 
@@ -217,18 +229,21 @@ export default function Configuracoes() {
   };
 
   const handleSelecionarMoldura = (item) => {
-    setSelectedFrame(item);
-    setSelectedBorderColor(null);
-
-    Animated.sequence([
-      Animated.timing(frameScale, { toValue: 1.1, duration: 150, useNativeDriver: true }),
-      Animated.timing(frameScale, { toValue: 1, duration: 150, useNativeDriver: true }),
-    ]).start();
+    if (item.isRemove) {
+      setSelectedFrame(null);      // limpa moldura
+    } else {
+      setSelectedFrame(item);      // seleciona moldura
+      setSelectedBorderColor(null); // limpa borda (mutuamente exclusivo)
+    }
   };
 
   const handleSelecionarBorda = (cor) => {
-    setSelectedBorderColor(cor);
-    setSelectedFrame(null);
+    if (!cor) {                     // caso seja a opção "remover"
+      setSelectedBorderColor(null);
+    } else {
+      setSelectedBorderColor(cor);  // seleciona borda
+      setSelectedFrame(null);       // limpa moldura (mutuamente exclusivo)
+    }
   };
 
   const bannersVisiveis = expandedBanners ? banners : banners.slice(0, 2);
@@ -241,25 +256,28 @@ export default function Configuracoes() {
     : selectedColor
       ? { type: "color", value: selectedColor }
       : null;
-  // 🔹 Salva moldura, borda e imagem de perfil
-  const handleSalvarMoldura = async () => {
+  // 🔹 Salvar moldura ou borda (e imagem) de forma independente
+  const handleSalvarMolduraOuBorda = async () => {
     try {
-      if (selectedFrame || selectedBorderColor || profileImage) {
-        await AsyncStorage.setItem(
-          "molduraSelecionada",
-          JSON.stringify({
-            frame: selectedFrame,
-            borderColor: selectedBorderColor,
-            profileImage: profileImage, // ✅ salva também a imagem escolhida
-          })
-        );
-
-        navigation.navigate("Perfil");
-      } else {
+      // verifica se há algo selecionado
+      if (!selectedFrame && !selectedBorderColor && !profileImage) {
         alert("Selecione uma moldura, cor ou imagem primeiro!");
+        return;
       }
+      // salva no AsyncStorage
+      await AsyncStorage.setItem(
+        "molduraSelecionada",
+        JSON.stringify({
+          frame: selectedFrame,
+          borderColor: selectedBorderColor,
+          profileImage: profileImage,
+        })
+      );
+      // reset de seleção ou feedback
+      Alert.alert("Salvo!", "Alterações de moldura, borda ou imagem foram salvas.");
+      navigation.navigate("Perfil");
     } catch (error) {
-      console.log("Erro ao salvar moldura/cor/imagem:", error);
+      console.log("Erro ao salvar moldura/borda/imagem:", error);
     }
   };
   // 🔹 Salvar informações pessoais
@@ -308,6 +326,49 @@ export default function Configuracoes() {
     } catch (error) {
       console.log("Erro ao remover banner:", error);
     }
+  };
+  // 🔹 Detectar automaticamente se houve mudança
+  useEffect(() => {
+    if (!initialBannerState) return;
+
+    const bannerAtual = {
+      banner: selectedBanner,
+      color: selectedColor
+    };
+    // 🔹 Comparação segura para objetos (require/URI)
+    const noChanges =
+      (bannerAtual.banner === initialBannerState.value && initialBannerState.type === "banner" ||
+        bannerAtual.banner === null && initialBannerState.type !== "banner") &&
+      (bannerAtual.color === initialBannerState.value && initialBannerState.type === "color" ||
+        bannerAtual.color === null && initialBannerState.type !== "color");
+
+    setHasChanges(!noChanges);
+  }, [selectedBanner, selectedColor, initialBannerState]);
+  // 🔹 Carregar banner salvo ao iniciar
+  useEffect(() => {
+    const carregarBanner = async () => {
+      try {
+        const saved = await AsyncStorage.getItem("bannerSelecionado");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed.type === "banner") setSelectedBanner(parsed.value);
+          if (parsed.type === "color") setSelectedColor(parsed.value);
+          setInitialBannerState(parsed); // estado inicial
+        } else {
+          setInitialBannerState({ banner: null, color: null });
+        }
+      } catch (error) {
+        console.log("Erro ao carregar banner inicial:", error);
+      }
+    };
+
+    carregarBanner();
+  }, []);
+
+  const handleExcluirImagemPronta = () => {
+    setSelectedReadyImage(null);
+    setProfileImage(null);
+    setShowImageModal(false);
   };
 
   return (
@@ -409,33 +470,76 @@ export default function Configuracoes() {
           </View>
 
           <View style={styles.colorsGrid}>
-            {coresVisiveis.map((cor, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => handleSelecionarCor(cor)}
-                style={[
-                  styles.colorOption,
-                  { backgroundColor: cor },
-                  selectedColor === cor && styles.selectedItem,
-                ]}
-              />
-            ))}
+            {coresVisiveis.map((item, index) => {
+              const isRemove = typeof item === "object" && item.isRemove;
+
+              const corValor = isRemove ? null : item;
+
+              const isSelected =
+                (selectedColor === item) ||
+                (isRemove && selectedColor === null);
+
+              return (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => {
+                    if (isRemove) {
+                      setSelectedColor(null);
+                    } else {
+                      handleSelecionarCor(item);
+                    }
+                  }}
+                  style={[
+                    styles.colorOption,
+                    isRemove
+                      ? { borderWidth: 2, borderColor: "#AAA", alignItems: "center", justifyContent: "center" }
+                      : { backgroundColor: item },
+
+                    // seleção azul normal
+                    !isRemove && selectedColor === item && styles.selectedItem,
+
+                    // seleção do remover → vermelho
+                    isRemove && selectedColor === null && { borderColor: "#E53935", borderWidth: 3 }
+                  ]}
+                >
+                  {isRemove && (
+                    <Image
+                      source={item.icon}
+                      style={{ width: 35, height: 35, tintColor: "#555" }}
+                      resizeMode="contain"
+                    />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
-        {/* Botões Salvar / Retirar Banner */}
+        {/* Mensagem de salvo */}
+        {savedMessage && (
+          <Text style={{
+            textAlign: "center",
+            color: "#4CAF50",
+            marginBottom: 10,
+            fontSize: 16,
+            fontWeight: "bold"
+          }}>
+            Alterações salvas!
+          </Text>
+        )}
+        {/* Botão */}
         <View style={styles.bannerButtonsRow}>
           <TouchableOpacity
-            style={[styles.bannerButton, { backgroundColor: "#4CAF50" }]}
+            style={[
+              styles.bannerButton,
+              {
+                backgroundColor: hasChanges ? "#0D47A1" : "#9E9E9E",
+                opacity: hasChanges ? 1 : 0.6
+              }
+            ]}
+            disabled={!hasChanges}
             onPress={handleSalvarBanner}
           >
-            <Text style={styles.bannerButtonText}>Salvar banner</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.bannerButton, { backgroundColor: "#E53935" }]}
-            onPress={handleRetirarBanner}
-          >
-            <Text style={styles.bannerButtonText}>Retirar banner</Text>
+            <Text style={styles.bannerButtonText}>Salvar alteração no banner</Text>
           </TouchableOpacity>
         </View>
         {/* 🔹 Preview da Moldura e/ou Borda */}
@@ -476,7 +580,7 @@ export default function Configuracoes() {
           <View style={styles.imageButtonRow}>
             <TouchableOpacity
               style={[styles.imageButton, { backgroundColor: "#0D47A1" }]}
-              onPress={handleEscolherImagemGaleria}
+              onPress={() => setShowGalleryPopup(true)}
             >
               <Text style={styles.imageButtonText}>Imagem da Galeria</Text>
             </TouchableOpacity>
@@ -551,27 +655,52 @@ export default function Configuracoes() {
           </View>
 
           <View style={styles.colorsGrid}>
-            {bordasVisiveis.map((cor, index) => (
-              <TouchableOpacity
-                key={index}
-                onPress={() => handleSelecionarBorda(cor)}
-                style={[
-                  styles.colorOption,
-                  { backgroundColor: cor },
-                  selectedBorderColor === cor && styles.selectedItem,
-                ]}
-              />
-            ))}
+            {bordasVisiveis.map((item, index) => {
+              const isRemove = typeof item === "object" && item.isRemove;
+
+              const isSelected =
+                (selectedBorderColor === item) ||
+                (isRemove && selectedBorderColor === null);
+
+              return (
+                <TouchableOpacity
+                  key={index}
+                  onPress={() => {
+                    if (isRemove) {
+                      setSelectedBorderColor(null);
+                    } else {
+                      handleSelecionarBorda(item);
+                    }
+                  }}
+                  style={[
+                    styles.colorOption,
+                    isRemove
+                      ? { borderWidth: 2, borderColor: "#AAA", alignItems: "center", justifyContent: "center" }
+                      : { backgroundColor: item },
+
+                    // seleção azul normal
+                    !isRemove && selectedBorderColor === item && styles.selectedItem,
+
+                    // remover → vermelho
+                    isRemove && selectedBorderColor === null && { borderColor: "#E53935", borderWidth: 3 }
+                  ]}
+                >
+                  {isRemove && (
+                    <Image
+                      source={item.icon}
+                      style={{ width: 35, height: 35, tintColor: "#555" }}
+                      resizeMode="contain"
+                    />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
         </View>
         {/* 🔹 Botões finais */}
         <View style={styles.bottomButtonsRow}>
-          <TouchableOpacity style={[styles.saveButton, { flex: 1 }]} onPress={handleSalvarMoldura}>
-            <Text style={styles.saveButtonText}>Salvar moldura, cor ou imagem</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.removeButton, { flex: 1 }]} onPress={handleRetirarMoldura}>
-            <Text style={styles.removeButtonText}>Retirar moldura, cor ou imagem</Text>
+          <TouchableOpacity style={[styles.saveButton, { flex: 1 }]} onPress={handleSalvarMolduraOuBorda}>
+            <Text style={styles.saveButtonText}>Salvar alterações</Text>
           </TouchableOpacity>
         </View>
         {/* 🔹 Informações Pessoais */}
@@ -665,22 +794,6 @@ export default function Configuracoes() {
           )}
         </View>
       </ScrollView >
-      {popupBannerRemoved && (
-        <View style={styles.bannerRemovedOverlay}>
-          <View style={styles.bannerRemovedBox}>
-            <Text style={styles.bannerRemovedTitle}>Banner removido</Text>
-            <Text style={styles.bannerRemovedSubtitle}>Seu banner foi removido com sucesso.</Text>
-
-            <TouchableOpacity
-              style={styles.bannerRemovedButton}
-              onPress={() => setPopupBannerRemoved(false)}
-            >
-              <Text style={styles.bannerRemovedButtonText}>OK</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      )
-      }
       {/* 🔹 Pop-up de seleção de imagens prontas */}
       {
         showImageModal && (
@@ -712,13 +825,6 @@ export default function Configuracoes() {
 
               <View style={styles.popupButtonsRow}>
                 <TouchableOpacity
-                  style={[styles.popupButton, { backgroundColor: "#BDBDBD" }]}
-                  onPress={() => setShowImageModal(false)}
-                >
-                  <Text style={styles.popupButtonText}>Fechar</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
                   style={[styles.popupButton, { backgroundColor: "#4CAF50" }]}
                   onPress={() => {
                     if (!selectedReadyImage) {
@@ -735,11 +841,65 @@ export default function Configuracoes() {
                 >
                   <Text style={styles.popupButtonText}>Confirmar</Text>
                 </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.popupButton, { backgroundColor: "#E53935" }]}
+                  onPress={handleExcluirImagemPronta}
+                >
+                  <Text style={styles.popupButtonText}>Excluir</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.popupButton, { backgroundColor: "#BDBDBD" }]}
+                  onPress={() => setShowImageModal(false)}
+                >
+                  <Text style={styles.popupButtonText}>Fechar</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </View>
         )
       }
+      {/* 🔹 Pop-up de seleção da imagem da galeria */}
+      {showGalleryPopup && (
+        <View style={styles.popupOverlay}>
+          <View style={styles.popupBox}>
+            <Text style={styles.popupTitle}>Escolha uma ação</Text>
+
+            <View style={styles.popupButtonsRow}>
+              <TouchableOpacity
+                style={[styles.popupButton, { backgroundColor: "#0D47A1" }]}
+                onPress={async () => {
+                  setShowGalleryPopup(false);
+                  await handleEscolherImagemGaleria();
+                }}
+              >
+                <Text style={styles.popupButtonText}>Galeria</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.popupButton, { backgroundColor: "#E53935" }]}
+                onPress={() => {
+                  if (profileImage) {
+                    setProfileImage(null);
+                    AsyncStorage.removeItem("molduraSelecionada"); // só se for da galeria
+                  }
+                  setShowGalleryPopup(false);
+                }}
+              >
+                <Text style={styles.popupButtonText}>Excluir</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.popupButton, { backgroundColor: "#BDBDBD" }]}
+                onPress={() => setShowGalleryPopup(false)}
+              >
+                <Text style={styles.popupButtonText}>Fechar</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      )}
     </>
   );
 }
