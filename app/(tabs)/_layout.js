@@ -33,6 +33,8 @@ export default function Layout() {
       <Tabs.Screen name="PraticaComum" options={{ href: null }} />
       <Tabs.Screen name="PraticaExtra" options={{ href: null }} />
       <Tabs.Screen name="Ajuda" options={{ href: null }} />
+      <Tabs.Screen name="LojaEP" options={{ href: null }} />
+      <Tabs.Screen name="LojaFC" options={{ href: null }} />
     </Tabs>
   );
 }
