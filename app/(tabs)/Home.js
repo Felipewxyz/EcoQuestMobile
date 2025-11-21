@@ -19,7 +19,6 @@ import Svg, { Circle } from "react-native-svg";
 export default function Home() {
   const navigation = useNavigation();
   const route = useRoute();
-
   // refs para cada bloco por tema
   const temaRefs = [
     { extra: useRef(null), comum: useRef(null), extra2: useRef(null), comum2: useRef(null) },
@@ -28,21 +27,17 @@ export default function Home() {
   ];
 
   const scrollViewRef = useRef(null);
-
   // progresso separado por tipo
   const [progresso, setProgresso] = useState({
     comum: [0, 0, 0],
     extra: [0, 0, 0],
   });
-
   // barra de Complete 2 práticas
   const [barraPraticasCompleta, setBarraPraticasCompleta] = useState(false);
   // barra de Complete 1 tema
   const [barraTemaCompleta, setBarraTemaCompleta] = useState(false);
-
   // controle de temas desbloqueados
   const [desbloqueados, setDesbloqueados] = useState([true, false, false]);
-
   // 🧹 Limpa o progresso de Quests toda vez que o app inicia
   useEffect(() => {
     const limparProgresso = async () => {
@@ -57,13 +52,11 @@ export default function Home() {
 
     limparProgresso();
   }, []);
-
   // animValues separados por tipo e tema
   const animValues = useRef({
     comum: [new Animated.Value(0), new Animated.Value(0), new Animated.Value(0)],
     extra: [new Animated.Value(0), new Animated.Value(0), new Animated.Value(0)],
   }).current;
-
   // ================= Carregar progresso =================
   useFocusEffect(
     React.useCallback(() => {
@@ -90,7 +83,6 @@ export default function Home() {
           );
 
           setProgresso({ comum: valoresComum, extra: valoresExtra });
-
           // animar cada barra individualmente
           valoresComum.forEach((p, i) => {
             Animated.timing(animValues.comum[i], {
@@ -115,16 +107,13 @@ export default function Home() {
       carregarProgresso();
     }, [])
   );
-
   // ================= Atualizar desbloqueios =================
   useEffect(() => {
     const novosDesbloqueios = [...desbloqueados];
-
     // desbloqueia tema 2 se tema 1 estiver completo
     if (progresso.comum[0] === 1 && progresso.extra[0] === 1) {
       novosDesbloqueios[1] = true;
     }
-
     // desbloqueia tema 3 se tema 2 estiver completo
     if (progresso.comum[1] === 1 && progresso.extra[1] === 1) {
       novosDesbloqueios[2] = true;
@@ -132,7 +121,6 @@ export default function Home() {
 
     setDesbloqueados(novosDesbloqueios);
   }, [progresso]);
-
   // 👉 ADICIONE AQUI ESTA FUNÇÃO 👇
   const handlePracticeComplete = async () => {
     try {
@@ -150,7 +138,6 @@ export default function Home() {
       console.log("Erro ao salvar progresso:", err);
     }
   };
-
   // ================= Contar práticas completas (para a tela Quests) =================
   useEffect(() => {
     const atualizarProgressoQuests = async () => {
@@ -170,7 +157,6 @@ export default function Home() {
 
     atualizarProgressoQuests();
   }, [progresso]);
-
   // ================= Contar temas completos (para a tela Quests) =================
   useEffect(() => {
     const atualizarProgressoTemas = async () => {
@@ -182,7 +168,6 @@ export default function Home() {
             temasCompletos++;
           }
         }
-
         // Queremos apenas saber se 1 tema foi concluído (para a quest)
         const valorFinal = temasCompletos >= 1 ? 1 : 0;
 
@@ -195,7 +180,6 @@ export default function Home() {
 
     atualizarProgressoTemas();
   }, [progresso]);
-
   // ================= Scroll automático =================
   useFocusEffect(
     React.useCallback(() => {
@@ -224,7 +208,6 @@ export default function Home() {
       }
     }, [route.params])
   );
-
   // ================= Componentes =================
   const CircleProgress = ({ index, tipo = "comum", size = 140, onPress }) => {
     const strokeWidth = 10;
@@ -339,7 +322,6 @@ export default function Home() {
               tipo="comum"
               onPress={() => navigation.navigate("PraticaComum", { scrollTo: i })}
             />
-
             {/* Bloco Extra Extra */}
             <BlocoExtra
               innerRef={temaRefs[i].extra2}
@@ -379,50 +361,14 @@ const styles = StyleSheet.create({
   iconItem: { flexDirection: "row", alignItems: "center" },
   icon: { width: 50, height: 50, marginRight: 6 },
   iconText: { fontSize: 18, fontWeight: "bold", color: "#000" },
-  themeBox: {
-    backgroundColor: "#FFFFFF",
-    borderColor: "#019314",
-    borderWidth: 2,
-    borderRadius: 10,
-    padding: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    height: 80,
-    marginTop: 10,
-  },
+  themeBox: { backgroundColor: "#FFFFFF", borderColor: "#019314", borderWidth: 2, borderRadius: 10, padding: 14, flexDirection: "row", alignItems: "center", justifyContent: "space-between", height: 80, marginTop: 10 },
   themeTextContainer: { flex: 1 },
   themeTitle: { color: "#019314", fontSize: 16, fontWeight: "bold", opacity: 0.85 },
   themeSubtitle: { color: "#019314", fontSize: 14, fontWeight: "500" },
   divider: { width: 2, height: "80%", backgroundColor: "#019314", marginHorizontal: 12, opacity: 0.8 },
-  greenBox: {
-    borderWidth: 2,
-    borderColor: "#019314",
-    borderRadius: 15,
-    paddingVertical: 20,
-    paddingHorizontal: 10,
-    marginTop: 10,
-    marginBottom: 18,
-    alignItems: "center",
-  },
+  greenBox: { borderWidth: 2, borderColor: "#019314", borderRadius: 15, paddingVertical: 20, paddingHorizontal: 10, marginTop: 10, marginBottom: 18, alignItems: "center" },
   circleContainer: { alignItems: "center", justifyContent: "center" },
   iconInside: { position: "absolute", top: "50%", left: "50%", transform: [{ translateX: -18 }, { translateY: -12 }] },
-  overlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(255,255,255,0.8)",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 10,
-  },
-  overlayText: {
-    color: "#000",
-    fontSize: 14,
-    fontWeight: "600",
-    textAlign: "center",
-    paddingHorizontal: 10,
-  },
+  overlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(255,255,255,0.8)", justifyContent: "center", alignItems: "center", borderRadius: 10 },
+  overlayText: { color: "#000", fontSize: 14, fontWeight: "600", textAlign: "center", paddingHorizontal: 10 }
 });
