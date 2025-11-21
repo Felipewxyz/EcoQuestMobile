@@ -13,6 +13,7 @@ import {
   Text,
   UIManager,
   View,
+  Modal
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
@@ -45,6 +46,26 @@ const addFloraCoins = async (amount) => {
   }
 };
 
+const RewardPopup = ({ visible, message, icon, onClose }) => {
+  if (!visible) return null;
+
+  return (
+    <Modal transparent visible={visible} animationType="fade">
+      <View style={styles.overlay}>
+        <View style={styles.popup}>
+          {icon && <Image source={icon} style={styles.icon} />}
+          <Text style={styles.title}>Parabéns! 🎉</Text>
+          <Text style={styles.message}>{message}</Text>
+
+          <Pressable style={styles.button} onPress={onClose}>
+            <Text style={styles.buttonText}>OK</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+};
+
 export default function Home() {
   const navigation = useNavigation();
   const route = useRoute();
@@ -67,15 +88,40 @@ export default function Home() {
   const [barraTemaCompleta, setBarraTemaCompleta] = useState(false);
   // controle de temas desbloqueados
   const [desbloqueados, setDesbloqueados] = useState([true, false, false]);
-  // 🧹 Limpa o progresso de Quests toda vez que o app inicia
+  const [popupVisible, setPopupVisible] = useState(false);
+  const [popupMessage, setPopupMessage] = useState("");
+  const [popupIcon, setPopupIcon] = useState(null);
+  const [ecoPoints, setEcoPoints] = useState(0);
+  const [floraCoins, setFloraCoins] = useState(0);
+  // Limpa o progresso
   useEffect(() => {
     const limparProgresso = async () => {
       try {
+        // 🔄 Reseta progresso exibido nas Quests
         await AsyncStorage.removeItem("completedPractices");
         await AsyncStorage.removeItem("completedThemes");
-        console.log("🧼 Progresso de Quests resetado ao iniciar o app");
+
+        // 🔄 Reseta moedas
+        await AsyncStorage.setItem("ecopoints", "0");
+        await AsyncStorage.setItem("floracoins", "0");
+
+        // 🔄 Reseta flags de recompensas (para barras darem recompensa novamente)
+        await AsyncStorage.setItem("rewardedComum", JSON.stringify([false, false, false]));
+        await AsyncStorage.setItem("rewardedExtra", JSON.stringify([false, false, false]));
+
+        // 🔄 Reseta progresso das barras comuns
+        await AsyncStorage.setItem("pratica1", "0");
+        await AsyncStorage.setItem("pratica2", "0");
+        await AsyncStorage.setItem("pratica3", "0");
+
+        // 🔄 Reseta progresso das barras extra
+        await AsyncStorage.setItem("extra1", "0");
+        await AsyncStorage.setItem("extra2", "0");
+        await AsyncStorage.setItem("extra3", "0");
+
+        console.log("🧼 App resetado — modo demonstração ativo");
       } catch (err) {
-        console.log("Erro ao limpar progresso de Quests:", err);
+        console.log("Erro ao limpar progresso:", err);
       }
     };
 
@@ -169,8 +215,11 @@ export default function Home() {
             await AsyncStorage.setItem("rewardedComum", JSON.stringify(rewardedComumArr));
 
             await addEcoPoints(15);
+            setEcoPoints(prev => prev + 15);
 
-            alert("🎉 Você ganhou +15 EcoPoints!");
+            setPopupMessage("Você ganhou 15 EcoPoints!");
+            setPopupIcon(require("../../assets/images/folha.png")); // ícone do app
+            setPopupVisible(true);
           }
         }
 
@@ -182,8 +231,11 @@ export default function Home() {
             await AsyncStorage.setItem("rewardedExtra", JSON.stringify(rewardedExtraArr));
 
             await addFloraCoins(10);
+            setFloraCoins(prev => prev + 10);
 
-            alert("✨ Você ganhou +10 FloraCoins!");
+            setPopupMessage("Você ganhou 10 FloraCoins!");
+            setPopupIcon(require("../../assets/images/flor.png"));
+            setPopupVisible(true);
           }
         }
       } catch (error) {
@@ -358,72 +410,84 @@ export default function Home() {
   ];
 
   return (
-    <ScrollView ref={scrollViewRef} style={styles.container}>
-      {/* Topo */}
-      <View style={styles.topIcons}>
-        <View style={styles.iconItem}>
-          <Image source={require("../../assets/images/gota.png")} style={styles.icon} />
-          <Text style={styles.iconText}>5</Text>
-        </View>
-        <View style={styles.iconItem}>
-          <Image source={require("../../assets/images/folha.png")} style={styles.icon} />
-          <Text style={styles.iconText}>120</Text>
-        </View>
-        <View style={styles.iconItem}>
-          <Image source={require("../../assets/images/coracao.png")} style={styles.icon} />
-          <Text style={styles.iconText}>3</Text>
-        </View>
-      </View>
-
-      {temas.map((t, i) => {
-        const bloqueado = !desbloqueados[i];
-
-        return (
-          <View key={i} style={{ position: "relative" }}>
-            {/* Bloco Extra Comum */}
-            <BlocoExtra
-              innerRef={temaRefs[i].extra}
-              title={t}
-              index={i}
-              tipo="Comum"
-              onPress={() => navigation.navigate("Temas", { scrollTo: i })}
-            />
-            <BlocoComum
-              innerRef={temaRefs[i].comum}
-              index={i}
-              tipo="comum"
-              onPress={() => navigation.navigate("PraticaComum", { scrollTo: i })}
-            />
-            {/* Bloco Extra Extra */}
-            <BlocoExtra
-              innerRef={temaRefs[i].extra2}
-              title={t}
-              index={i}
-              tipo="Extra"
-              onPress={() => navigation.navigate("Temas", { scrollTo: i })}
-            />
-            <BlocoComum
-              innerRef={temaRefs[i].comum2}
-              index={i}
-              tipo="extra"
-              onPress={() =>
-                navigation.navigate("PraticaExtra", { initialQuiz: i + 1, scrollTo: i })
-              }
-            />
-
-            {bloqueado && (
-              <View style={styles.overlay}>
-                <Text style={styles.overlayText}>
-                  Complete o tema anterior para desbloquear esse
-                </Text>
-              </View>
-            )}
+    <>
+      <ScrollView ref={scrollViewRef} style={styles.container}>
+        {/* Topo */}
+        <View style={styles.topIcons}>
+          {/* Máx de dias ou outro valor fixo */}
+          <View style={styles.iconItem}>
+            <Image source={require("../../assets/images/gota.png")} style={styles.icon} />
+            <Text style={styles.iconText}>30</Text>
           </View>
-        );
-      })}
 
-      <View style={{ height: 40 }} />
-    </ScrollView>
+          {/* EcoPoints em tempo real */}
+          <View style={styles.iconItem}>
+            <Image source={require("../../assets/images/folha.png")} style={styles.icon} />
+            <Text style={styles.iconText}>{ecoPoints}</Text>
+          </View>
+
+          {/* FloraCoins em tempo real */}
+          <View style={styles.iconItem}>
+            <Image source={require("../../assets/images/flor.png")} style={styles.icon} />
+            <Text style={styles.iconText}>{floraCoins}</Text>
+          </View>
+        </View>
+
+        {temas.map((t, i) => {
+          const bloqueado = !desbloqueados[i];
+
+          return (
+            <View key={i} style={{ position: "relative" }}>
+              {/* Bloco Extra Comum */}
+              <BlocoExtra
+                innerRef={temaRefs[i].extra}
+                title={t}
+                index={i}
+                tipo="Comum"
+                onPress={() => navigation.navigate("Temas", { scrollTo: i })}
+              />
+              <BlocoComum
+                innerRef={temaRefs[i].comum}
+                index={i}
+                tipo="comum"
+                onPress={() => navigation.navigate("PraticaComum", { scrollTo: i })}
+              />
+              {/* Bloco Extra Extra */}
+              <BlocoExtra
+                innerRef={temaRefs[i].extra2}
+                title={t}
+                index={i}
+                tipo="Extra"
+                onPress={() => navigation.navigate("Temas", { scrollTo: i })}
+              />
+              <BlocoComum
+                innerRef={temaRefs[i].comum2}
+                index={i}
+                tipo="extra"
+                onPress={() =>
+                  navigation.navigate("PraticaExtra", { initialQuiz: i + 1, scrollTo: i })
+                }
+              />
+
+              {bloqueado && (
+                <View style={styles.overlay}>
+                  <Text style={styles.overlayText}>
+                    Complete o tema anterior para desbloquear esse
+                  </Text>
+                </View>
+              )}
+            </View>
+          );
+        })}
+        <View style={{ height: 40 }} />
+      </ScrollView>
+      <RewardPopup
+        visible={popupVisible}
+        message={popupMessage}
+        icon={popupIcon}
+        onClose={() => setPopupVisible(false)}
+      />
+    </>
   );
 }
 
@@ -442,5 +506,39 @@ const styles = StyleSheet.create({
   circleContainer: { alignItems: "center", justifyContent: "center" },
   iconInside: { position: "absolute", top: "50%", left: "50%", transform: [{ translateX: -18 }, { translateY: -12 }] },
   overlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(255,255,255,0.8)", justifyContent: "center", alignItems: "center", borderRadius: 10 },
-  overlayText: { color: "#000", fontSize: 14, fontWeight: "600", textAlign: "center", paddingHorizontal: 10 }
+  overlayText: { color: "#000", fontSize: 14, fontWeight: "600", textAlign: "center", paddingHorizontal: 10 },
+  popup: {
+    width: 290,
+    paddingVertical: 30,
+    paddingHorizontal: 25,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    alignItems: "center",
+    borderWidth: 3,
+    borderColor: "#7BC47F",
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#2F7D32",
+    marginBottom: 5,
+  },
+  message: {
+    textAlign: "center",
+    fontSize: 17,
+    color: "#333",
+    marginBottom: 25,
+    maxWidth: 220,
+  },
+  button: {
+    backgroundColor: "#4CAF50",
+    paddingVertical: 10,
+    paddingHorizontal: 35,
+    borderRadius: 10,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "bold",
+  }
 });
