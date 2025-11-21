@@ -60,7 +60,6 @@ export default function Perfil() {
       >
         <Ionicons name="settings-outline" size={38} color="#000" />
       </Pressable>
-
       {/* 🔹 Banner dinâmico */}
       {bannerData?.type === "banner" ? (
         <Image
@@ -76,7 +75,6 @@ export default function Perfil() {
           ]}
         />
       )}
-
       {/* 🔹 Seção verde escura */}
       <View style={styles.greenSection}>
         {/* Container do perfil com moldura para fora */}
@@ -89,7 +87,6 @@ export default function Perfil() {
               resizeMode="contain"
             />
           )}
-
           {/* Foto de perfil com borda colorida (se houver) */}
           <View
             style={[
@@ -119,7 +116,6 @@ export default function Perfil() {
             />
           </View>
         </View>
-
         {/* Info do perfil */}
         <View style={styles.infoBox}>
           <Text style={styles.name}>{userInfo.nome || "Seu nome"}</Text>
@@ -140,7 +136,6 @@ export default function Perfil() {
           </View>
         </View>
       </View>
-
       {/* 🔹 Parte branca com estatísticas */}
       <View style={styles.whiteSection}>
         <View style={styles.statsBox}>
@@ -155,7 +150,6 @@ export default function Perfil() {
               <Text style={styles.statLabel}>máx. de dias seguidos</Text>
             </View>
           </View>
-
           {/* 2 - EcoPoints */}
           <View style={styles.statRow}>
             <Image
@@ -167,7 +161,6 @@ export default function Perfil() {
               <Text style={styles.statLabel}>total de EcoPoints</Text>
             </View>
           </View>
-
           {/* 3 - FloraCoins */}
           <View style={styles.statRow}>
             <Image
@@ -186,130 +179,26 @@ export default function Perfil() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-  },
-  configIcon: {
-    position: "absolute",
-    top: 25,
-    left: 25,
-    zIndex: 3,
-  },
-  banner: {
-    width: "100%",
-    height: 285,
-    alignSelf: "center",
-    overflow: "hidden",
-    backgroundColor: "#B4E197",
-  },
-  greenSection: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#7BC47F",
-    height: 110,
-    paddingLeft: 200,
-    paddingRight: 20,
-    marginTop: -70,
-  },
+  container: { flex: 1, backgroundColor: "#FFFFFF" },
+  configIcon: { position: "absolute", top: 25, left: 25, zIndex: 3 },
+  banner: { width: "100%", height: 285, alignSelf: "center", overflow: "hidden", backgroundColor: "#B4E197" },
+  greenSection: { flexDirection: "row", alignItems: "center", backgroundColor: "#7BC47F", height: 110, paddingLeft: 200, paddingRight: 20, marginTop: -70 },
   // Novo container para foto + moldura
-  profileWrapper: {
-    position: "absolute",
-    top: -90,
-    left: 10,
-    width: 180,
-    height: 180,
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 5,
-  },
-  profileCircle: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: "#C4C4C4",
-    borderWidth: 3,
-    borderColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-    zIndex: 2,
-  },
-  profileImage: {
-    width: 130,   // 👈 deve ser ligeiramente menor que o círculo branco
-    height: 130,
-    borderRadius: 65,
-  },
-  frameOutside: {
-    position: "absolute",
-    width: 240,          // 🔹 mesmo tamanho da moldura do perfil
-    height: 240,
-    top: -40,            // 🔹 sobe a moldura um pouco
-    left: -22,           // 🔹 desloca levemente para a esquerda
-    zIndex: 3,
-  },
-  infoBox: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  name: {
-    fontSize: 22,
-    fontWeight: "bold",
-    color: "#000",
-  },
-  username: {
-    fontSize: 14,
-    color: "#333",
-    marginBottom: 5,
-  },
-  levelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  levelContainer: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-  },
-  levelText: {
-    fontSize: 12,
-    fontWeight: "600",
-  },
-
-  whiteSection: {
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    paddingVertical: 30,
-  },
-  statsBox: {
-    backgroundColor: "#F2F2F2",
-    borderRadius: 15,
-    paddingVertical: 45,
-    paddingHorizontal: 25,
-    width: "80%",
-  },
-  statRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 30,
-  },
-  statTextBox: {
-    marginLeft: 8,
-    justifyContent: "center",
-  },
-  statNumber: {
-    fontSize: 34,
-    fontWeight: "bold",
-    color: "#000",
-  },
-  statLabel: {
-    fontSize: 15,
-    color: "#555",
-  },
-  iconImage: {
-    width: 70,
-    height: 70,
-    resizeMode: "contain",
-  },
+  profileWrapper: { position: "absolute", top: -90, left: 10, width: 180, height: 180, alignItems: "center", justifyContent: "center", zIndex: 5 },
+  profileCircle: { width: 140, height: 140, borderRadius: 70, backgroundColor: "#C4C4C4", borderWidth: 3, borderColor: "#FFFFFF", alignItems: "center", justifyContent: "center", overflow: "hidden", zIndex: 2 },
+  profileImage: { width: 130, height: 130, borderRadius: 65 },
+  frameOutside: { position: "absolute", width: 240, height: 240, top: -40, left: -22, zIndex: 3 },
+  infoBox: { flex: 1, justifyContent: "center" },
+  name: { fontSize: 22, fontWeight: "bold", color: "#000" },
+  username: { fontSize: 14, color: "#333", marginBottom: 5 },
+  levelRow: { flexDirection: "row", alignItems: "center" },
+  levelContainer: { backgroundColor: "#FFFFFF", borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2 },
+  levelText: { fontSize: 12, fontWeight: "600" },
+  whiteSection: { backgroundColor: "#FFFFFF", alignItems: "center", paddingVertical: 30 },
+  statsBox: { backgroundColor: "#F2F2F2", borderRadius: 15, paddingVertical: 45, paddingHorizontal: 25, width: "80%" },
+  statRow: { flexDirection: "row", alignItems: "center", marginBottom: 30 },
+  statTextBox: { marginLeft: 8, justifyContent: "center" },
+  statNumber: { fontSize: 34, fontWeight: "bold", color: "#000" },
+  statLabel: { fontSize: 15, color: "#555" },
+  iconImage: { width: 70, height: 70, resizeMode: "contain" }
 });
