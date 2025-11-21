@@ -17,6 +17,8 @@ export default function Perfil() {
   const [bannerData, setBannerData] = useState(null);
   const [frameData, setFrameData] = useState(null); // moldura/borda selecionada
   const [userInfo, setUserInfo] = useState({ nome: "", usuario: "" });
+  const [ecoPoints, setEcoPoints] = useState(0);
+  const [floraCoins, setFloraCoins] = useState(0);
 
   useFocusEffect(
     useCallback(() => {
@@ -25,6 +27,11 @@ export default function Perfil() {
           const banner = await AsyncStorage.getItem("bannerSelecionado");
           const moldura = await AsyncStorage.getItem("molduraSelecionada");
           const userData = await AsyncStorage.getItem("userInfo");
+          const ep = await AsyncStorage.getItem("ecopoints");
+          const fc = await AsyncStorage.getItem("floracoins");
+
+          setEcoPoints(ep ? Number(ep) : 0);
+          setFloraCoins(fc ? Number(fc) : 0);
 
           if (banner) setBannerData(JSON.parse(banner));
 
@@ -102,14 +109,14 @@ export default function Perfil() {
               source={
                 frameData?.profileImage
                   ? (typeof frameData.profileImage === 'string'
-                      ? { uri: frameData.profileImage }
-                      : typeof frameData.profileImage === 'number'
-                        ? frameData.profileImage
-                        : frameData.profileImage && frameData.profileImage.uri
-                          ? (typeof frameData.profileImage.uri === 'number'
-                              ? frameData.profileImage.uri
-                              : { uri: frameData.profileImage.uri })
-                          : require("../../assets/images/perfilplaceholder.png"))
+                    ? { uri: frameData.profileImage }
+                    : typeof frameData.profileImage === 'number'
+                      ? frameData.profileImage
+                      : frameData.profileImage && frameData.profileImage.uri
+                        ? (typeof frameData.profileImage.uri === 'number'
+                          ? frameData.profileImage.uri
+                          : { uri: frameData.profileImage.uri })
+                        : require("../../assets/images/perfilplaceholder.png"))
                   : require("../../assets/images/perfilplaceholder.png")
               }
               style={styles.profileImage}
@@ -157,7 +164,7 @@ export default function Perfil() {
               style={styles.iconImage}
             />
             <View style={styles.statTextBox}>
-              <Text style={styles.statNumber}>279</Text>
+              <Text style={styles.statNumber}>{ecoPoints}</Text>
               <Text style={styles.statLabel}>total de EcoPoints</Text>
             </View>
           </View>
@@ -168,7 +175,7 @@ export default function Perfil() {
               style={styles.iconImage}
             />
             <View style={styles.statTextBox}>
-              <Text style={styles.statNumber}>113</Text>
+              <Text style={styles.statNumber}>{floraCoins}</Text>
               <Text style={styles.statLabel}>total de FloraCoins</Text>
             </View>
           </View>

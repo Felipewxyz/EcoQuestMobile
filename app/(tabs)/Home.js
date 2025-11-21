@@ -16,6 +16,35 @@ import {
 } from "react-native";
 import Svg, { Circle } from "react-native-svg";
 
+// FUNÇÕES PARA SOMAR MOEDAS =============================
+const addEcoPoints = async (amount) => {
+  try {
+    const stored = await AsyncStorage.getItem("ecopoints");
+    const current = stored ? Number(stored) : 0;
+
+    const updated = current + amount;
+    await AsyncStorage.setItem("ecopoints", String(updated));
+
+    return updated;
+  } catch (error) {
+    console.log("Erro ao adicionar EcoPoints:", error);
+  }
+};
+
+const addFloraCoins = async (amount) => {
+  try {
+    const stored = await AsyncStorage.getItem("floracoins");
+    const current = stored ? Number(stored) : 0;
+
+    const updated = current + amount;
+    await AsyncStorage.setItem("floracoins", String(updated));
+
+    return updated;
+  } catch (error) {
+    console.log("Erro ao adicionar FloraCoins:", error);
+  }
+};
+
 export default function Home() {
   const navigation = useNavigation();
   const route = useRoute();
@@ -120,6 +149,49 @@ export default function Home() {
     }
 
     setDesbloqueados(novosDesbloqueios);
+  }, [progresso]);
+  // ================= Detectar conclusão das barras e dar recompensas =================
+  useEffect(() => {
+    const verificarConclusao = async () => {
+      try {
+        // Carregar valores já recompensados (evita dar a mesma recompensa 2x)
+        const rewardedComum = await AsyncStorage.getItem("rewardedComum");
+        const rewardedExtra = await AsyncStorage.getItem("rewardedExtra");
+
+        let rewardedComumArr = rewardedComum ? JSON.parse(rewardedComum) : [false, false, false];
+        let rewardedExtraArr = rewardedExtra ? JSON.parse(rewardedExtra) : [false, false, false];
+
+        // ======== PRÁTICA COMUM → +15 EcoPoints ==========
+        for (let i = 0; i < progresso.comum.length; i++) {
+          if (progresso.comum[i] === 1 && !rewardedComumArr[i]) {
+            rewardedComumArr[i] = true;
+
+            await AsyncStorage.setItem("rewardedComum", JSON.stringify(rewardedComumArr));
+
+            await addEcoPoints(15);
+
+            alert("🎉 Você ganhou +15 EcoPoints!");
+          }
+        }
+
+        // ======== PRÁTICA EXTRA → +10 FloraCoins ==========
+        for (let i = 0; i < progresso.extra.length; i++) {
+          if (progresso.extra[i] === 1 && !rewardedExtraArr[i]) {
+            rewardedExtraArr[i] = true;
+
+            await AsyncStorage.setItem("rewardedExtra", JSON.stringify(rewardedExtraArr));
+
+            await addFloraCoins(10);
+
+            alert("✨ Você ganhou +10 FloraCoins!");
+          }
+        }
+      } catch (error) {
+        console.log("Erro ao verificar conclusão:", error);
+      }
+    };
+
+    verificarConclusao();
   }, [progresso]);
   // 👉 ADICIONE AQUI ESTA FUNÇÃO 👇
   const handlePracticeComplete = async () => {
