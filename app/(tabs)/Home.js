@@ -211,14 +211,19 @@ export default function Home() {
         for (let i = 0; i < progresso.comum.length; i++) {
           if (progresso.comum[i] === 1 && !rewardedComumArr[i]) {
             rewardedComumArr[i] = true;
-
             await AsyncStorage.setItem("rewardedComum", JSON.stringify(rewardedComumArr));
 
-            await addEcoPoints(15);
-            setEcoPoints(prev => prev + 15);
+            const updated = await addEcoPoints(15);
 
-            setPopupMessage("Você ganhou 15 EcoPoints!");
-            setPopupIcon(require("../../assets/images/folha.png")); // ícone do app
+            // Atualiza o topo em tempo real
+            setEcoPoints(updated);
+
+            // Atualiza o valor temporário para a barra de Quests
+            await AsyncStorage.setItem("ecoPointsTemp", String(updated));
+
+            // Dispara o pop-up
+            setPopupMessage("🎉 Você ganhou +15 EcoPoints!");
+            setPopupIcon(require("../../assets/images/folha.png"));
             setPopupVisible(true);
           }
         }

@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import { useLocalSearchParams, usePathname, useRouter } from "expo-router";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function Quests() {
@@ -11,6 +11,7 @@ export default function Quests() {
   const params = useLocalSearchParams();
   const [completedPractices, setCompletedPractices] = useState(0);
   const [completedThemes, setCompletedThemes] = useState(0);
+  const [ecoPointsQuest, setEcoPointsQuest] = useState(0);
 
   useEffect(() => {
     const carregarTemas = async () => {
@@ -26,6 +27,20 @@ export default function Quests() {
 
     carregarTemas();
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      const carregarEcoPointsQuest = async () => {
+        try {
+          const temp = await AsyncStorage.getItem("ecoPointsTemp");
+          setEcoPointsQuest(temp ? Number(temp) : 0);
+        } catch (err) {
+          console.log(err);
+        }
+      };
+      carregarEcoPointsQuest();
+    }, [])
+  );
 
   // 🔁 sempre que o usuário voltar pra tela, recarrega o progresso salvo
   useFocusEffect(
@@ -274,65 +289,65 @@ export default function Quests() {
                   <Text style={styles.questDescription}>Ganhe 25 EPs</Text>
                 </View>
                 <View style={styles.progressOuter}>
-                  <View style={[styles.progressInner, { width: `${(18 / 25) * 100}%` }]} />
-                  <Text style={styles.progressText}>18/25</Text>
+                  <View style={[styles.progressInner, { width: `${Math.min((ecoPointsQuest / 25) * 100, 100)}%` }]} />
+                  <Text style={styles.progressText}>{Math.min(ecoPointsQuest, 25)}/25</Text>
                 </View>
-                <View style={styles.separator} />
-              </View>
+                  <View style={styles.separator} />
+                </View>
 
-              {/* 3️⃣ Terceira Quest */}
-              <View style={styles.questProgressContainer}>
-                <View style={styles.textRow}>
-                  <Ionicons name="barbell-outline" size={28} color="#1E90FF" style={styles.icon} />
-                  <Text style={styles.questDescription}>Complete 1 tema</Text>
-                </View>
-                <View style={styles.progressOuter}>
-                  <View
-                    style={[
-                      styles.progressInner,
-                      { width: `${(completedThemes / 1) * 100}%` },
-                    ]}
-                  />
-                  <Text style={styles.progressText}>{`${completedThemes}/1`}</Text>
+                {/* 3️⃣ Terceira Quest */}
+                <View style={styles.questProgressContainer}>
+                  <View style={styles.textRow}>
+                    <Ionicons name="barbell-outline" size={28} color="#1E90FF" style={styles.icon} />
+                    <Text style={styles.questDescription}>Complete 1 tema</Text>
+                  </View>
+                  <View style={styles.progressOuter}>
+                    <View
+                      style={[
+                        styles.progressInner,
+                        { width: `${(completedThemes / 1) * 100}%` },
+                      ]}
+                    />
+                    <Text style={styles.progressText}>{`${completedThemes}/1`}</Text>
+                  </View>
                 </View>
               </View>
+            </>
+            ) : (
+            <View style={{ paddingHorizontal: 16, alignItems: "center" }}>
+              {isPast && !isCompleted && !isLocked ? (
+                <View style={styles.messageBox}>
+                  <Text style={[styles.messageTitle, { color: "#E84545" }]}>🌿 Não desanime</Text>
+                  <Text style={styles.messageDesc}>
+                    O tempo passou, mas a natureza sempre dá novas chances. Continue cultivando bons hábitos!
+                  </Text>
+                </View>
+              ) : isLocked && isPast ? (
+                <View style={styles.messageBox}>
+                  <Text style={[styles.messageTitle, { color: "#FF8C00" }]}>💪 Continue tentando</Text>
+                  <Text style={styles.messageDesc}>
+                    Nem sempre conseguimos de primeira — o importante é continuar firme!
+                    Cada tentativa é um passo rumo a um planeta melhor 🌎
+                  </Text>
+                </View>
+              ) : isFuture ? (
+                <View style={styles.messageBox}>
+                  <Text style={[styles.messageTitle, { color: "#1E90FF" }]}>🌱 Espere mais um pouco</Text>
+                  <Text style={styles.messageDesc}>
+                    O próximo desafio está germinando — prepare-se para ajudar a natureza em breve!
+                  </Text>
+                </View>
+              ) : isCompleted ? (
+                <View style={styles.messageBox}>
+                  <Text style={[styles.messageTitle, { color: "#2E8B57" }]}>🌎 Parabéns!</Text>
+                  <Text style={styles.messageDesc}>
+                    Você concluiu este desafio e ajudou o planeta — continue assim!
+                  </Text>
+                </View>
+              ) : null}
             </View>
-          </>
-        ) : (
-          <View style={{ paddingHorizontal: 16, alignItems: "center" }}>
-            {isPast && !isCompleted && !isLocked ? (
-              <View style={styles.messageBox}>
-                <Text style={[styles.messageTitle, { color: "#E84545" }]}>🌿 Não desanime</Text>
-                <Text style={styles.messageDesc}>
-                  O tempo passou, mas a natureza sempre dá novas chances. Continue cultivando bons hábitos!
-                </Text>
-              </View>
-            ) : isLocked && isPast ? (
-              <View style={styles.messageBox}>
-                <Text style={[styles.messageTitle, { color: "#FF8C00" }]}>💪 Continue tentando</Text>
-                <Text style={styles.messageDesc}>
-                  Nem sempre conseguimos de primeira — o importante é continuar firme!
-                  Cada tentativa é um passo rumo a um planeta melhor 🌎
-                </Text>
-              </View>
-            ) : isFuture ? (
-              <View style={styles.messageBox}>
-                <Text style={[styles.messageTitle, { color: "#1E90FF" }]}>🌱 Espere mais um pouco</Text>
-                <Text style={styles.messageDesc}>
-                  O próximo desafio está germinando — prepare-se para ajudar a natureza em breve!
-                </Text>
-              </View>
-            ) : isCompleted ? (
-              <View style={styles.messageBox}>
-                <Text style={[styles.messageTitle, { color: "#2E8B57" }]}>🌎 Parabéns!</Text>
-                <Text style={styles.messageDesc}>
-                  Você concluiu este desafio e ajudou o planeta — continue assim!
-                </Text>
-              </View>
-            ) : null}
-          </View>
         )}
-      </ScrollView>
+          </ScrollView>
     </View>
   );
 }
